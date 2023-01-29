@@ -27,7 +27,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 
 	"bocker.software-services.dev/pkg/bocker/docker"
 	"github.com/spf13/cobra"
@@ -42,16 +41,8 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available backups",
 	Run: func(cmd *cobra.Command, args []string) {
-		dockerUsername, ok := os.LookupEnv("DOCKER_USERNAME")
-		if !ok {
-			log.Fatal("DOCKER_USERNAME not set")
-		}
-		dockerPAT, ok := os.LookupEnv("DOCKER_PAT")
-		if !ok {
-			log.Fatal("DOCKER_PAT not set")
-		}
 
-		c := docker.NewClient(dockerUsername, dockerPAT)
+		c := docker.NewClient()
 
 		path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", namespace, repo)
 		resp, err := c.DoRequest(http.MethodGet, path, nil)

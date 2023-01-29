@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -20,7 +21,16 @@ type AuthResp struct {
 	Token string
 }
 
-func NewClient(username, password string) *Client {
+func NewClient() *Client {
+	username, ok := os.LookupEnv("DOCKER_USERNAME")
+	if !ok {
+		log.Fatal("DOCKER_USERNAME not set")
+	}
+	password, ok := os.LookupEnv("DOCKER_PAT")
+	if !ok {
+		log.Fatal("DOCKER_PAT not set")
+	}
+
 	apiHost := "https://hub.docker.com"
 	c := http.Client{Timeout: 3 * time.Second}
 	path := "/v2/users/login"

@@ -59,30 +59,30 @@ bocker -c <container id> -H <host> -n <db name> -u <db user> -o <output file nam
 		backupFile := fmt.Sprintf("%s_%s_backup.psql", dbName, dateTime)
 		defer os.Remove(backupFile)
 
-		pg_bin, err := exec.LookPath("pg_dump")
+		pgDumpBin, err := exec.LookPath("pg_dump")
 		if err == nil {
-			pg_bin, _ = filepath.Abs(pg_bin)
+			pgDumpBin, _ = filepath.Abs(pgDumpBin)
 		}
-		bkpCmd := exec.Command(pg_bin, "-F", "c", "-U", dbName, "-h", hostName, dbName, "-f", backupFile)
+		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", dbName, "-h", hostName, dbName, "-f", backupFile)
 		bkpCmd.Stdin = os.Stdin
 		bkpCmd.Stdout = os.Stdout
 		bkpCmd.Stderr = os.Stderr
 		err = bkpCmd.Run()
 		if err != nil {
-			log.Panic(err)
+			log.Fatal(err)
 		}
 
 		// create image
-		docker_bin, err := exec.LookPath("docker")
+		dockerBin, err := exec.LookPath("docker")
 		if err == nil {
-			docker_bin, _ = filepath.Abs(docker_bin)
+			dockerBin, _ = filepath.Abs(dockerBin)
 		}
 
 		tag := fmt.Sprintf("%s:%s", repo, dateTime)
 		buildArgs := []string{"build", "--build-arg", "backup_file=" + backupFile,
 			"-t", tag, "-f", "internal/Dockerfile.backup", "."}
 
-		buildCmd := exec.Command(docker_bin, buildArgs...)
+		buildCmd := exec.Command(dockerBin, buildArgs...)
 		buildCmd.Stdin = os.Stdin
 		buildCmd.Stdout = os.Stdout
 		buildCmd.Stderr = os.Stderr
@@ -93,7 +93,7 @@ bocker -c <container id> -H <host> -n <db name> -u <db user> -o <output file nam
 
 		// push it
 		pushArgs := []string{"push", tag}
-		pushCmd := exec.Command(docker_bin, pushArgs...)
+		pushCmd := exec.Command(dockerBin, pushArgs...)
 		pushCmd.Stdin = os.Stdin
 		pushCmd.Stdout = os.Stdout
 		pushCmd.Stderr = os.Stderr
