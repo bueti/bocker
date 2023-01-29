@@ -22,13 +22,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
+	"bocker.software-services.dev/pkg/bocker/helpers"
 	"github.com/spf13/cobra"
 )
 
@@ -50,50 +53,37 @@ to quickly create a Cobra application.`,
 		if err == nil {
 			dockerBin, _ = filepath.Abs(dockerBin)
 		}
-		tarBin, err := exec.LookPath("tar")
-		if err == nil {
-			tarBin, _ = filepath.Abs(tarBin)
-		}
 
+		// pull image from registry
 		imagePath := fmt.Sprintf("%s/%s:%s", namespace, repo, tag)
 		pullArgs := []string{"pull", imagePath}
 		pullCmd := exec.Command(dockerBin, pullArgs...)
-		pullCmd.Stdin = os.Stdin
-		pullCmd.Stdout = os.Stdout
-		pullCmd.Stderr = os.Stderr
 		err = pullCmd.Run()
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		outputFile := "output.tar"
-		// defer os.Remove(outputFile)
+		defer os.Remove(outputFile)
 
 		saveArgs := []string{"save", imagePath, "--output", outputFile}
 		saveCmd := exec.Command(dockerBin, saveArgs...)
-		saveCmd.Stdin = os.Stdin
-		saveCmd.Stdout = os.Stdout
-		saveCmd.Stderr = os.Stderr
 		err = saveCmd.Run()
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// unpack layer
-		// tar -xf layer.tar production_backup_${DATE}.psql
-		// psqlFile := fmt.Sprintf("%s_%s_backup.psql", dbName, tag)
-		unpackArgs := []string{"-xf", outputFile, "manifest.json"}
-		unpackCmd := exec.Command(tarBin, unpackArgs...)
-		unpackCmd.Stdin = os.Stdin
-		unpackCmd.Stdout = os.Stdout
-		unpackCmd.Stderr = os.Stderr
-		err = unpackCmd.Run()
+		manifestFile := "manifest.json"
+		defer os.Remove(manifestFile)
+
+		err = helpers.Untar(outputFile, manifestFile)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Couldn't unpack %s", manifestFile)
 		}
 
-		// read manifest.json
-		file, err := os.ReadFile("manifest.json")
+		// read manifest.json and extract layer with backup in it
+		file, err := os.ReadFile(manifestFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -102,28 +92,19 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		// first layer contains backup
-		fmt.Println(manifest[0].Layers[0])
-		// extract there will be the file
-		// sl[len(sl)-1]
-		last := len(manifest[0].Layers) - 1
-		unpackArgs = []string{"-xf", outputFile, manifest[0].Layers[last]}
-		unpackCmd = exec.Command(tarBin, unpackArgs...)
-		unpackCmd.Stdin = os.Stdin
-		unpackCmd.Stdout = os.Stdout
-		unpackCmd.Stderr = os.Stderr
-		err = unpackCmd.Run()
+
+		backupLayerTar := manifest[0].Layers[len(manifest[0].Layers)-1]
+		defer os.Remove(backupLayerTar)
+
+		err = helpers.Untar(outputFile, backupLayerTar)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		backupFile := fmt.Sprintf("%s_%s_backup.psql", dbName, tag)
-		// backupFile := fmt.Sprintf("production_backup_%s.psql", tag)
-		unpackArgs = []string{"-xf", manifest[0].Layers[last], backupFile}
-		unpackCmd = exec.Command(tarBin, unpackArgs...)
-		unpackCmd.Stdin = os.Stdin
-		unpackCmd.Stdout = os.Stdout
-		unpackCmd.Stderr = os.Stderr
-		err = unpackCmd.Run()
+		defer os.Remove(backupFile)
+
+		err = helpers.Untar(backupLayerTar, backupFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -134,41 +115,35 @@ to quickly create a Cobra application.`,
 		if err == nil {
 			pgsqlBin, _ = filepath.Abs(pgsqlBin)
 		}
-		// psql -U ioverlander -d postgres -c 'CREATE DATABASE ioverlander_production OWNER ioverlander ENCODING UTF8'
 		stmt := fmt.Sprintf("CREATE DATABASE %s OWNER %s ENCODING UTF8", dbName, dbOwner)
 		psqlArgs := []string{"-U", dbOwner, "-d", "postgres", "-c", stmt}
 
 		psqlCmd := exec.Command(pgsqlBin, psqlArgs...)
-		psqlCmd.Stdin = os.Stdin
-		psqlCmd.Stdout = os.Stdout
-		psqlCmd.Stderr = os.Stderr
+		var outb, errb bytes.Buffer
+		psqlCmd.Stdout = &outb
+		psqlCmd.Stderr = &errb
 		err = psqlCmd.Run()
 		if err != nil {
-			log.Print(err)
+			if strings.Contains(errb.String(), "already exists") {
+				log.Println("Database already exists, skipping creation...")
+			} else {
+				log.Fatal(errb.String())
+			}
 		}
 
 		// 2. restore backup
-		// -h localhost /production_backup_${DATE}.psql
 		pgRestoreBin, err := exec.LookPath("pg_restore")
 		if err == nil {
 			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
 		}
-		// pg_restore -c -F c -v -U ioverlander --dbname=ioverlander_production -h localhost /production_backup_${DATE}.psql
 		pgRestoreArgs := []string{"-U", dbOwner, "-F", "c", "-c", "-v", fmt.Sprintf("--dbname=%s", dbName), "-h", hostName, backupFile}
 
 		pgRestoreCmd := exec.Command(pgRestoreBin, pgRestoreArgs...)
-		pgRestoreCmd.Stdin = os.Stdin
-		pgRestoreCmd.Stdout = os.Stdout
-		pgRestoreCmd.Stderr = os.Stderr
 		err = pgRestoreCmd.Run()
 		if err != nil {
 			log.Print(err)
 		}
-
-		os.RemoveAll(manifest[0].Layers[last])
-		os.RemoveAll("manifest.json")
-		os.RemoveAll(outputFile)
-		os.RemoveAll(backupFile)
+		log.Println("Database successfully restored.")
 	},
 }
 
