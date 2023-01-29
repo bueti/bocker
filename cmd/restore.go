@@ -116,8 +116,8 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		// backupFile := fmt.Sprintf("%s_%s_backup.psql", dbName, tag)
-		backupFile := fmt.Sprintf("production_backup_%s.psql", tag)
+		backupFile := fmt.Sprintf("%s_%s_backup.psql", dbName, tag)
+		// backupFile := fmt.Sprintf("production_backup_%s.psql", tag)
 		unpackArgs = []string{"-xf", manifest[0].Layers[last], backupFile}
 		unpackCmd = exec.Command(tarBin, unpackArgs...)
 		unpackCmd.Stdin = os.Stdin
@@ -127,10 +127,6 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		// os.RemoveAll(manifest[0].Layers[last])
-		// os.RemoveAll("manifest.json")
-		// os.RemoveAll(outputFile)
 
 		// restore backup
 		// 1. create database
@@ -168,6 +164,11 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Print(err)
 		}
+
+		os.RemoveAll(manifest[0].Layers[last])
+		os.RemoveAll("manifest.json")
+		os.RemoveAll(outputFile)
+		os.RemoveAll(backupFile)
 	},
 }
 
