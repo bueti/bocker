@@ -37,6 +37,7 @@ var (
 	dbName   string
 	user     string
 	repo     string
+	roles    bool
 )
 
 // backupCmd represents the backup command
@@ -52,51 +53,72 @@ Requires:
 - pg_dump installed
 
 Example:
-bocker -c <container id> -H <host> -n <db name> -u <db user> -o <output file name>`,
+bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dt := time.Now()
 		dateTime := dt.Format("2006-01-02_15-04-05")
 		backupFile := fmt.Sprintf("%s_%s_backup.psql", dbName, dateTime)
+		rolesFile := ""
 		defer os.Remove(backupFile)
+		defer os.Remove(rolesFile)
 
+		log.Println("Creating backup...")
 		pgDumpBin, err := exec.LookPath("pg_dump")
 		if err == nil {
 			pgDumpBin, _ = filepath.Abs(pgDumpBin)
 		}
-		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", dbName, "-h", hostName, dbName, "-f", backupFile)
-		bkpCmd.Stdin = os.Stdin
-		bkpCmd.Stdout = os.Stdout
-		bkpCmd.Stderr = os.Stderr
+		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", hostName, dbName, "-f", backupFile)
 		err = bkpCmd.Run()
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		if roles {
+			log.Println("Exporting roles...")
+			rolesFile = fmt.Sprintf("%s_%s_roles_backup.sql", dbName, dateTime)
+			defer os.Remove(rolesFile)
+
+			pgDumallBin, err := exec.LookPath("pg_dumpall")
+			if err == nil {
+				pgDumallBin, _ = filepath.Abs(pgDumallBin)
+			}
+			bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFile))
+			err = bkpCmd.Run()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
 		// create image
+		log.Println("Building image...")
 		dockerBin, err := exec.LookPath("docker")
 		if err == nil {
 			dockerBin, _ = filepath.Abs(dockerBin)
 		}
 
 		tag := fmt.Sprintf("%s:%s", repo, dateTime)
-		buildArgs := []string{"build", "--build-arg", "backup_file=" + backupFile,
-			"-t", tag, "-f", "internal/Dockerfile.backup", "."}
+		var buildArgs []string
+		if roles {
+			buildArgs = []string{"build",
+				"--build-arg", "backup_file=" + backupFile,
+				"--build-arg", fmt.Sprintf("roles_file=%s", rolesFile),
+				"-t", tag, "-f", "internal/Dockerfile.backup", "."}
+		} else {
+			buildArgs = []string{"build",
+				"--build-arg", "backup_file=" + backupFile,
+				"-t", tag, "-f", "internal/Dockerfile.backup", "."}
+		}
 
 		buildCmd := exec.Command(dockerBin, buildArgs...)
-		buildCmd.Stdin = os.Stdin
-		buildCmd.Stdout = os.Stdout
-		buildCmd.Stderr = os.Stderr
 		err = buildCmd.Run()
 		if err != nil {
 			log.Panic(err)
 		}
 
 		// push it
+		log.Println("Pushing image...")
 		pushArgs := []string{"push", tag}
 		pushCmd := exec.Command(dockerBin, pushArgs...)
-		pushCmd.Stdin = os.Stdin
-		pushCmd.Stdout = os.Stdout
-		pushCmd.Stderr = os.Stderr
 		err = pushCmd.Run()
 		if err != nil {
 			log.Panic(err)
@@ -110,6 +132,7 @@ func init() {
 	backupCmd.Flags().StringVarP(&dbName, "name", "n", "", "Database name (required)")
 	backupCmd.Flags().StringVarP(&user, "user", "u", "", "Database user name (required)")
 	backupCmd.Flags().StringVarP(&repo, "repository", "r", "bueti/ioverlander_backup", "Repository to push image to")
+	backupCmd.Flags().BoolVar(&roles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("name")
 	backupCmd.MarkFlagRequired("user")
