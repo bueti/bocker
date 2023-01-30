@@ -52,6 +52,7 @@ to quickly create a Cobra application.`,
 
 		// pull image from registry
 		imagePath := fmt.Sprintf("%s/%s:%s", app.config.docker.namespace, app.config.docker.repository, app.config.docker.tag)
+		app.infoLog.Printf("Pulling image (%s) from registry...", imagePath)
 		pullArgs := []string{"pull", imagePath}
 		pullCmd := exec.Command(dockerBin, pullArgs...)
 		err = pullCmd.Run()
@@ -59,10 +60,10 @@ to quickly create a Cobra application.`,
 			app.errorLog.Fatal(err)
 		}
 
+		app.infoLog.Println("Extracting backup from Docker Image...")
 		outputFile := "output.tar"
-		defer os.Remove(outputFile)
-
-		saveArgs := []string{"save", imagePath, "--output", outputFile}
+		outputFilePath := filepath.Join(app.config.tmpDir, outputFile)
+		saveArgs := []string{"save", imagePath, "--output", outputFilePath}
 		saveCmd := exec.Command(dockerBin, saveArgs...)
 		err = saveCmd.Run()
 		if err != nil {
@@ -71,15 +72,13 @@ to quickly create a Cobra application.`,
 
 		// unpack layer
 		manifestFile := "manifest.json"
-		defer os.Remove(manifestFile)
-
-		err = helpers.Untar(outputFile, manifestFile)
+		err = helpers.Untar(outputFilePath, manifestFile, app.config.tmpDir)
 		if err != nil {
 			app.errorLog.Fatalf("Couldn't unpack %s", manifestFile)
 		}
 
 		// read manifest.json and extract layer with backup in it
-		file, err := os.ReadFile(manifestFile)
+		file, err := os.ReadFile(filepath.Join(app.config.tmpDir, manifestFile))
 		if err != nil {
 			app.errorLog.Fatal(err)
 		}
@@ -90,23 +89,21 @@ to quickly create a Cobra application.`,
 		}
 
 		backupLayerTar := manifest[0].Layers[len(manifest[0].Layers)-1]
-		defer os.Remove(backupLayerTar)
 
-		err = helpers.Untar(outputFile, backupLayerTar)
+		err = helpers.Untar(filepath.Join(app.config.tmpDir, outputFile), backupLayerTar, app.config.tmpDir)
 		if err != nil {
 			app.errorLog.Fatal(err)
 		}
 
 		backupFile := fmt.Sprintf("%s_%s_backup.psql", app.config.db.name, app.config.docker.tag)
-		defer os.Remove(backupFile)
 
-		err = helpers.Untar(backupLayerTar, backupFile)
+		err = helpers.Untar(filepath.Join(app.config.tmpDir, backupLayerTar), backupFile, app.config.tmpDir)
 		if err != nil {
 			app.errorLog.Fatal(err)
 		}
 
 		// restore backup
-		// 1. create database
+		app.infoLog.Println("Creating database")
 		pgsqlBin, err := exec.LookPath("psql")
 		if err == nil {
 			pgsqlBin, _ = filepath.Abs(pgsqlBin)
@@ -128,11 +125,12 @@ to quickly create a Cobra application.`,
 		}
 
 		// 2. restore backup
+		app.infoLog.Println("Restoring database")
 		pgRestoreBin, err := exec.LookPath("pg_restore")
 		if err == nil {
 			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
 		}
-		pgRestoreArgs := []string{"-U", app.config.db.owner, "-F", "c", "-c", "-v", fmt.Sprintf("--dbname=%s", app.config.db.name), "-h", app.config.db.host, backupFile}
+		pgRestoreArgs := []string{"-U", app.config.db.owner, "-F", "c", "-c", "-v", fmt.Sprintf("--dbname=%s", app.config.db.name), "-h", app.config.db.host, filepath.Join(app.config.tmpDir, backupFile)}
 
 		pgRestoreCmd := exec.Command(pgRestoreBin, pgRestoreArgs...)
 		err = pgRestoreCmd.Run()

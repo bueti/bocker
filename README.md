@@ -8,6 +8,7 @@ Is it a good idea? Probably not, but it solved a problem I had!
 ## TODO
 
 - [x] Create application object
+- [x] use MkdirTemp
 - [ ] Make it work with psql in a Docker container
 - [ ] Create Makefile
 - [ ] Update README

@@ -41,6 +41,7 @@ type config struct {
 		owner       string
 		exportRoles bool
 	}
+	tmpDir string
 }
 
 type application struct {
@@ -77,5 +78,9 @@ func Execute() {
 }
 
 func init() {
-
+	tmpDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		app.errorLog.Fatal(err)
+	}
+	app.config.tmpDir = tmpDir
 }

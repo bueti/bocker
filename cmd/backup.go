@@ -24,8 +24,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -50,32 +48,34 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dt := time.Now()
 		dateTime := dt.Format("2006-01-02_15-04-05")
-		backupFile := fmt.Sprintf("%s_%s_backup.psql", app.config.db.name, dateTime)
-		rolesFile := ""
-		defer os.Remove(backupFile)
-		defer os.Remove(rolesFile)
+		backupFileName := fmt.Sprintf("%s_%s_backup.psql", app.config.db.name, dateTime)
+		backupFilePath := filepath.Join(app.config.tmpDir, backupFileName)
+		rolesFileName := ""
 
 		app.infoLog.Println("Creating backup...")
 		pgDumpBin, err := exec.LookPath("pg_dump")
 		if err == nil {
 			pgDumpBin, _ = filepath.Abs(pgDumpBin)
 		}
-		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", app.config.db.host, app.config.db.name, "-f", backupFile)
+		var outb, errb bytes.Buffer
+		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", app.config.db.host, app.config.db.name, "-f", backupFilePath)
+		bkpCmd.Stdout = &outb
+		bkpCmd.Stderr = &errb
 		err = bkpCmd.Run()
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.errorLog.Fatal(errb.String())
 		}
 
 		if app.config.db.exportRoles {
 			app.infoLog.Println("Exporting roles...")
-			rolesFile = fmt.Sprintf("%s_%s_roles_backup.sql", app.config.db.name, dateTime)
-			defer os.Remove(rolesFile)
+			rolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.config.db.name, dateTime)
+			rolesFilePath := filepath.Join(app.config.tmpDir, rolesFileName)
 
 			pgDumallBin, err := exec.LookPath("pg_dumpall")
 			if err == nil {
 				pgDumallBin, _ = filepath.Abs(pgDumallBin)
 			}
-			bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFile))
+			bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath))
 			err = bkpCmd.Run()
 			if err != nil {
 				app.errorLog.Fatal(err)
@@ -93,32 +93,34 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 		var buildArgs []string
 		if app.config.db.exportRoles {
 			buildArgs = []string{"build",
-				"--build-arg", "backup_file=" + backupFile,
-				"--build-arg", fmt.Sprintf("roles_file=%s", rolesFile),
-				"-t", tag, "-f", "internal/Dockerfile.backup", "."}
+				"--build-arg", fmt.Sprintf("backup_file=%s", backupFileName),
+				"--build-arg", fmt.Sprintf("roles_file=%s", rolesFileName),
+				"-t", tag, "-f", "internal/Dockerfile.backup", app.config.tmpDir}
 		} else {
 			buildArgs = []string{"build",
-				"--build-arg", "backup_file=" + backupFile,
-				"-t", tag, "-f", "internal/Dockerfile.backup", "."}
+				"--build-arg", fmt.Sprintf("backup_file=%s", backupFileName),
+				"-t", tag, "-f", "internal/Dockerfile.backup", app.config.tmpDir}
 		}
 
 		buildCmd := exec.Command(dockerBin, buildArgs...)
+		buildCmd.Stdout = &outb
+		buildCmd.Stderr = &errb
 		err = buildCmd.Run()
 		if err != nil {
-			log.Panic(err)
+			app.errorLog.Fatal(errb.String())
 		}
 
 		// push it
 		app.infoLog.Println("Pushing image...")
-		var outb, errb bytes.Buffer
 		pushArgs := []string{"push", tag}
 		pushCmd := exec.Command(dockerBin, pushArgs...)
 		pushCmd.Stdout = &outb
 		pushCmd.Stderr = &errb
 		err = pushCmd.Run()
 		if err != nil {
-			app.errorLog.Fatal(errb.String())
+			app.errorLog.Fatal(errb.String(), tag)
 		}
+		fmt.Printf("Published image %s\n", tag)
 	},
 }
 

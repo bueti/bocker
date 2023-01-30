@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 )
 
-func Untar(tarFile, extractFile string) error {
+// Extracts a single file from a tar file.
+func Untar(tarFile, extractFile, dir string) error {
 	tarBin, err := exec.LookPath("tar")
 	if err == nil {
 		tarBin, _ = filepath.Abs(tarBin)
@@ -14,6 +15,7 @@ func Untar(tarFile, extractFile string) error {
 	}
 	unpackArgs := []string{"-xf", tarFile, extractFile}
 	unpackCmd := exec.Command(tarBin, unpackArgs...)
+	unpackCmd.Dir = dir
 	err = unpackCmd.Run()
 	if err != nil {
 		return err
