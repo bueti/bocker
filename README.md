@@ -12,3 +12,4 @@ Is it a good idea? Probably not, but it solved a problem I had!
 - [ ] Make it work with psql in a Docker container
 - [ ] Create Makefile
 - [ ] Update README
+- [ ] I really should learn how to write tests..
