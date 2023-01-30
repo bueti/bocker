@@ -4,3 +4,10 @@ This is command line tool to create Postgres database backups, put them in a Doc
 
 Why  would you do that? The Docker registry is a very cheap data storage. Of course you should only do this with private repositories ;)
 Is it a good idea? Probably not, but it solved a problem I had!
+
+## TODO
+
+- [x] Create application object
+- [ ] Make it work with psql in a Docker container
+- [ ] Create Makefile
+- [ ] Update README

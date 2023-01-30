@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -30,14 +31,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-)
-
-var (
-	hostName string
-	dbName   string
-	user     string
-	repo     string
-	roles    bool
 )
 
 // backupCmd represents the backup command
@@ -57,25 +50,25 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dt := time.Now()
 		dateTime := dt.Format("2006-01-02_15-04-05")
-		backupFile := fmt.Sprintf("%s_%s_backup.psql", dbName, dateTime)
+		backupFile := fmt.Sprintf("%s_%s_backup.psql", app.config.db.name, dateTime)
 		rolesFile := ""
 		defer os.Remove(backupFile)
 		defer os.Remove(rolesFile)
 
-		log.Println("Creating backup...")
+		app.infoLog.Println("Creating backup...")
 		pgDumpBin, err := exec.LookPath("pg_dump")
 		if err == nil {
 			pgDumpBin, _ = filepath.Abs(pgDumpBin)
 		}
-		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", hostName, dbName, "-f", backupFile)
+		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", app.config.db.host, app.config.db.name, "-f", backupFile)
 		err = bkpCmd.Run()
 		if err != nil {
-			log.Fatal(err)
+			app.errorLog.Fatal(err)
 		}
 
-		if roles {
-			log.Println("Exporting roles...")
-			rolesFile = fmt.Sprintf("%s_%s_roles_backup.sql", dbName, dateTime)
+		if app.config.db.exportRoles {
+			app.infoLog.Println("Exporting roles...")
+			rolesFile = fmt.Sprintf("%s_%s_roles_backup.sql", app.config.db.name, dateTime)
 			defer os.Remove(rolesFile)
 
 			pgDumallBin, err := exec.LookPath("pg_dumpall")
@@ -85,20 +78,20 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 			bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFile))
 			err = bkpCmd.Run()
 			if err != nil {
-				log.Fatal(err)
+				app.errorLog.Fatal(err)
 			}
 		}
 
 		// create image
-		log.Println("Building image...")
+		app.infoLog.Println("Building image...")
 		dockerBin, err := exec.LookPath("docker")
 		if err == nil {
 			dockerBin, _ = filepath.Abs(dockerBin)
 		}
 
-		tag := fmt.Sprintf("%s:%s", repo, dateTime)
+		tag := fmt.Sprintf("%s/%s:%s", app.config.docker.namespace, app.config.docker.repository, dateTime)
 		var buildArgs []string
-		if roles {
+		if app.config.db.exportRoles {
 			buildArgs = []string{"build",
 				"--build-arg", "backup_file=" + backupFile,
 				"--build-arg", fmt.Sprintf("roles_file=%s", rolesFile),
@@ -116,23 +109,27 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 		}
 
 		// push it
-		log.Println("Pushing image...")
+		app.infoLog.Println("Pushing image...")
+		var outb, errb bytes.Buffer
 		pushArgs := []string{"push", tag}
 		pushCmd := exec.Command(dockerBin, pushArgs...)
+		pushCmd.Stdout = &outb
+		pushCmd.Stderr = &errb
 		err = pushCmd.Run()
 		if err != nil {
-			log.Panic(err)
+			app.errorLog.Fatal(errb.String())
 		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringVarP(&hostName, "host", "H", "localhost", "Hostname of the database host")
-	backupCmd.Flags().StringVarP(&dbName, "name", "n", "", "Database name (required)")
-	backupCmd.Flags().StringVarP(&user, "user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVarP(&repo, "repository", "r", "bueti/ioverlander_backup", "Repository to push image to")
-	backupCmd.Flags().BoolVar(&roles, "export-roles", false, "Include roles in backup")
+	backupCmd.Flags().StringVarP(&app.config.db.host, "host", "", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVarP(&app.config.db.name, "name", "n", "", "Database name (required)")
+	backupCmd.Flags().StringVarP(&app.config.db.user, "user", "u", "", "Database user name (required)")
+	backupCmd.Flags().StringVarP(&app.config.docker.namespace, "namespace", "", "buet", "Repository to push image to")
+	backupCmd.Flags().StringVarP(&app.config.docker.repository, "repository", "r", "ioverlander_backup", "Repository to push image to")
+	backupCmd.Flags().BoolVar(&app.config.db.exportRoles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("name")
 	backupCmd.MarkFlagRequired("user")

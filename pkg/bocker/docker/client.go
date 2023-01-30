@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -21,14 +20,14 @@ type AuthResp struct {
 	Token string
 }
 
-func NewClient() *Client {
+func NewClient() (*Client, error) {
 	username, ok := os.LookupEnv("DOCKER_USERNAME")
 	if !ok {
-		log.Fatal("DOCKER_USERNAME not set")
+		return nil, fmt.Errorf("DOCKER_USERNAME not set")
 	}
 	password, ok := os.LookupEnv("DOCKER_PAT")
 	if !ok {
-		log.Fatal("DOCKER_PAT not set")
+		return nil, fmt.Errorf("DOCKER_PAT not set")
 	}
 
 	apiHost := "https://hub.docker.com"
@@ -43,38 +42,38 @@ func NewClient() *Client {
 	}
 	out, err := json.Marshal(body)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, apiHost+path, bytes.NewBuffer(out))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")
 	res, err := c.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if res.StatusCode != 200 {
 		if res.StatusCode == 401 {
-			log.Fatalf("Authentication failed, status code: %d", res.StatusCode)
+			return nil, fmt.Errorf("authentication failed, status code: %d", res.StatusCode)
 		} else {
-			log.Fatalf("Docker API error, status code: %d", res.StatusCode)
+			return nil, fmt.Errorf("docker API error, status code: %d", res.StatusCode)
 		}
 	}
 	decoder := json.NewDecoder(res.Body)
 	resp := &AuthResp{}
 	err = decoder.Decode(resp)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return &Client{
 		httpClient: http.Client{Timeout: 3 * time.Second},
 		token:      resp.Token,
 		apiHost:    apiHost,
-	}
+	}, nil
 }
 
 // DoRequest makes a request to the Docker Hub API, caller is responsible to close response body

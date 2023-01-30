@@ -22,21 +22,50 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
+type config struct {
+	docker struct {
+		namespace  string
+		repository string
+		tag        string
+	}
+	db struct {
+		name        string
+		user        string
+		host        string
+		owner       string
+		exportRoles bool
+	}
+}
+
+type application struct {
+	config   config
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "bocker",
-	Short: "Create Postgresql backups and store them in Docker images",
-	Long: `Ever needed a quick and cheap way to store Postgresql database
+var (
+	app = &application{
+		errorLog: log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+		infoLog:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
+	}
+
+	rootCmd = &cobra.Command{
+		Use:   "bocker",
+		Short: "Create Postgresql backups and store them in Docker images",
+		Long: `Ever needed a quick and cheap way to store Postgresql database
 backups?
 
 This tool creates a backup and stores the resulting file in a Docker image. 
 It then uploads the docker image to Docker Hub (or any other docker registry).`,
-}
+	}
+)
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -48,13 +77,5 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.bocker.software-services.dev.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

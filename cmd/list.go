@@ -25,15 +25,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"bocker.software-services.dev/pkg/bocker/docker"
 	"github.com/spf13/cobra"
-)
-
-var (
-	namespace string
 )
 
 // listCmd represents the list command
@@ -42,37 +37,40 @@ var listCmd = &cobra.Command{
 	Short: "List available backups",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		c := docker.NewClient()
+		c, err := docker.NewClient()
+		if err != nil {
+			app.errorLog.Fatal(err)
+		}
 
-		path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", namespace, repo)
+		path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", app.config.docker.namespace, app.config.docker.repository)
 		resp, err := c.DoRequest(http.MethodGet, path, nil)
 		if err != nil {
-			log.Fatal(err)
+			app.errorLog.Fatal(err)
 		}
 		if resp.StatusCode == 200 {
 			bodyBytes, err := io.ReadAll(resp.Body)
 			if err != nil {
-				log.Fatal(err)
+				app.errorLog.Fatal(err)
 			}
 			var tags ListTagsResponse
 			err = json.Unmarshal(bodyBytes, &tags)
 			if err != nil {
-				log.Fatal(err)
+				app.errorLog.Fatal(err)
 			}
 
 			for _, v := range tags.Results {
 				fmt.Println(v.Name, v.FullSize, v.LastUpdaterUsername)
 			}
 		} else {
-			log.Println(resp.StatusCode)
+			app.infoLog.Println(resp.StatusCode)
 		}
 	},
 }
 
 func init() {
 	backupCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&namespace, "namespace", "n", "bueti", "Docker Namespace")
-	listCmd.Flags().StringVarP(&repo, "repository", "r", "ioverlander_backup", "Docker Repository")
+	listCmd.Flags().StringVarP(&app.config.docker.namespace, "namespace", "n", "bueti", "Docker Namespace")
+	listCmd.Flags().StringVarP(&app.config.docker.repository, "repository", "r", "ioverlander_backup", "Docker Repository")
 }
 
 type Layer struct {
