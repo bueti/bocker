@@ -9,7 +9,8 @@ Is it a good idea? Probably not, but it solved a problem I had!
 
 - [x] Create application object
 - [x] use MkdirTemp
-- [ ] Make it work with psql in a Docker container
 - [ ] Create Makefile
-- [ ] Update README
+- [ ] Create a better README
+- [ ] Make it work with psql in a Docker container
 - [ ] I really should learn how to write tests..
+- [ ] How about using the Docker SDK instead of exec.command?
