@@ -60,11 +60,9 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "bocker",
 		Short: "Create Postgresql backups and store them in Docker images",
-		Long: `Ever needed a quick and cheap way to store Postgresql database
-backups?
-
-This tool creates a backup and stores the resulting file in a Docker image. 
-It then uploads the docker image to Docker Hub (or any other docker registry).`,
+		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
+wraps it in a Docker image, and uploads it to Docker Hub. 
+Of course, Bocker will also do the reverse and restore your database from a backup in Docker Hub.`,
 	}
 )
 
@@ -83,6 +81,6 @@ func init() {
 		app.errorLog.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	app.config.tmpDir = tmpDir
 }
