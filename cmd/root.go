@@ -82,5 +82,7 @@ func init() {
 	if err != nil {
 		app.errorLog.Fatal(err)
 	}
+	defer os.RemoveAll(tmpDir)
+	
 	app.config.tmpDir = tmpDir
 }
