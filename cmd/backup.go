@@ -22,12 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bytes"
 	"fmt"
-	"os/exec"
-	"path/filepath"
-	"time"
 
+	"bocker.software-services.dev/pkg/bocker/db"
+	"bocker.software-services.dev/pkg/bocker/docker"
 	"github.com/spf13/cobra"
 )
 
@@ -46,93 +44,47 @@ Requires:
 Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dt := time.Now()
-		dateTime := dt.Format("2006-01-02_15-04-05")
-		backupFileName := fmt.Sprintf("%s_%s_backup.psql", app.config.db.name, dateTime)
-		backupFilePath := filepath.Join(app.config.tmpDir, backupFileName)
-		rolesFileName := ""
-
-		app.infoLog.Println("Creating backup...")
-		pgDumpBin, err := exec.LookPath("pg_dump")
-		if err == nil {
-			pgDumpBin, _ = filepath.Abs(pgDumpBin)
-		}
-		var outb, errb bytes.Buffer
-		bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", app.config.db.host, app.config.db.name, "-f", backupFilePath)
-		bkpCmd.Stdout = &outb
-		bkpCmd.Stderr = &errb
-		err = bkpCmd.Run()
+		app.InfoLog.Println("Creating backup...")
+		err := db.Dump(*app)
 		if err != nil {
-			app.errorLog.Fatal(errb.String())
+			app.ErrorLog.Fatal(err.Error())
 		}
 
-		if app.config.db.exportRoles {
-			app.infoLog.Println("Exporting roles...")
-			rolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.config.db.name, dateTime)
-			rolesFilePath := filepath.Join(app.config.tmpDir, rolesFileName)
-
-			pgDumallBin, err := exec.LookPath("pg_dumpall")
-			if err == nil {
-				pgDumallBin, _ = filepath.Abs(pgDumallBin)
-			}
-			bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath))
-			err = bkpCmd.Run()
+		if app.Config.DB.ExportRoles {
+			app.InfoLog.Println("Exporting roles...")
+			err := db.ExportRoles(*app)
 			if err != nil {
-				app.errorLog.Fatal(err)
+				app.ErrorLog.Fatal(err.Error())
 			}
 		}
 
-		// create image
-		app.infoLog.Println("Building image...")
-		dockerBin, err := exec.LookPath("docker")
-		if err == nil {
-			dockerBin, _ = filepath.Abs(dockerBin)
-		}
-
-		tag := fmt.Sprintf("%s/%s:%s", app.config.docker.namespace, app.config.docker.repository, dateTime)
-		var buildArgs []string
-		if app.config.db.exportRoles {
-			buildArgs = []string{"build",
-				"--build-arg", fmt.Sprintf("backup_file=%s", backupFileName),
-				"--build-arg", fmt.Sprintf("roles_file=%s", rolesFileName),
-				"-t", tag, "-f", "internal/Dockerfile.backup", app.config.tmpDir}
-		} else {
-			buildArgs = []string{"build",
-				"--build-arg", fmt.Sprintf("backup_file=%s", backupFileName),
-				"-t", tag, "-f", "internal/Dockerfile.backup", app.config.tmpDir}
-		}
-
-		buildCmd := exec.Command(dockerBin, buildArgs...)
-		buildCmd.Stdout = &outb
-		buildCmd.Stderr = &errb
-		err = buildCmd.Run()
+		app.InfoLog.Println("Building image...")
+		err = docker.Build(*app)
 		if err != nil {
-			app.errorLog.Fatal(errb.String())
+			app.ErrorLog.Fatal(err)
 		}
 
-		// push it
-		app.infoLog.Println("Pushing image...")
-		pushArgs := []string{"push", tag}
-		pushCmd := exec.Command(dockerBin, pushArgs...)
-		pushCmd.Stdout = &outb
-		pushCmd.Stderr = &errb
-		err = pushCmd.Run()
+		app.InfoLog.Println("Pushing image...")
+		err = docker.Push(*app)
 		if err != nil {
-			app.errorLog.Fatal(errb.String(), tag)
+			app.ErrorLog.Fatal(err)
 		}
-		fmt.Printf("Published image %s\n", tag)
+		fmt.Printf("Published image %s\n", app.Config.Docker.Tag)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringVarP(&app.config.db.host, "host", "", "localhost", "Hostname of the database host")
-	backupCmd.Flags().StringVarP(&app.config.db.name, "name", "n", "", "Database name (required)")
-	backupCmd.Flags().StringVarP(&app.config.db.user, "user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVarP(&app.config.docker.namespace, "namespace", "", "buet", "Repository to push image to")
-	backupCmd.Flags().StringVarP(&app.config.docker.repository, "repository", "r", "ioverlander_backup", "Repository to push image to")
-	backupCmd.Flags().BoolVar(&app.config.db.exportRoles, "export-roles", false, "Include roles in backup")
+	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "host", "", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVarP(&app.Config.DB.Name, "name", "n", "", "Database name (required)")
+	backupCmd.Flags().StringVarP(&app.Config.DB.User, "user", "u", "", "Database user name (required)")
+	backupCmd.Flags().StringVarP(&app.Config.Docker.Namespace, "namespace", "", "buet", "Repository to push image to")
+	backupCmd.Flags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "ioverlander_backup", "Repository to push image to")
+	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("name")
 	backupCmd.MarkFlagRequired("user")
+
+	app.Config.Docker.Tag = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.DB.DateTime)
+
 }

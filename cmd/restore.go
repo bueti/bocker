@@ -51,65 +51,65 @@ to quickly create a Cobra application.`,
 		}
 
 		// pull image from registry
-		imagePath := fmt.Sprintf("%s/%s:%s", app.config.docker.namespace, app.config.docker.repository, app.config.docker.tag)
-		app.infoLog.Printf("Pulling image (%s) from registry...", imagePath)
+		imagePath := fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
+		app.InfoLog.Printf("Pulling image (%s) from registry...", imagePath)
 		pullArgs := []string{"pull", imagePath}
 		pullCmd := exec.Command(dockerBin, pullArgs...)
 		err = pullCmd.Run()
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 
-		app.infoLog.Println("Extracting backup from Docker Image...")
+		app.InfoLog.Println("Extracting backup from Docker Image...")
 		outputFile := "output.tar"
-		outputFilePath := filepath.Join(app.config.tmpDir, outputFile)
+		outputFilePath := filepath.Join(app.Config.TmpDir, outputFile)
 		saveArgs := []string{"save", imagePath, "--output", outputFilePath}
 		saveCmd := exec.Command(dockerBin, saveArgs...)
 		err = saveCmd.Run()
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 
 		// unpack layer
 		manifestFile := "manifest.json"
-		err = helpers.Untar(outputFilePath, manifestFile, app.config.tmpDir)
+		err = helpers.Untar(outputFilePath, manifestFile, app.Config.TmpDir)
 		if err != nil {
-			app.errorLog.Fatalf("Couldn't unpack %s", manifestFile)
+			app.ErrorLog.Fatalf("Couldn't unpack %s", manifestFile)
 		}
 
 		// read manifest.json and extract layer with backup in it
-		file, err := os.ReadFile(filepath.Join(app.config.tmpDir, manifestFile))
+		file, err := os.ReadFile(filepath.Join(app.Config.TmpDir, manifestFile))
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 		var manifest []DockerImage
 		err = json.Unmarshal(file, &manifest)
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 
 		backupLayerTar := manifest[0].Layers[len(manifest[0].Layers)-1]
 
-		err = helpers.Untar(filepath.Join(app.config.tmpDir, outputFile), backupLayerTar, app.config.tmpDir)
+		err = helpers.Untar(filepath.Join(app.Config.TmpDir, outputFile), backupLayerTar, app.Config.TmpDir)
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 
-		backupFile := fmt.Sprintf("%s_%s_backup.psql", app.config.db.name, app.config.docker.tag)
+		backupFile := fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.Docker.Tag)
 
-		err = helpers.Untar(filepath.Join(app.config.tmpDir, backupLayerTar), backupFile, app.config.tmpDir)
+		err = helpers.Untar(filepath.Join(app.Config.TmpDir, backupLayerTar), backupFile, app.Config.TmpDir)
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 
 		// restore backup
-		app.infoLog.Println("Creating database")
+		app.InfoLog.Println("Creating database")
 		pgsqlBin, err := exec.LookPath("psql")
 		if err == nil {
 			pgsqlBin, _ = filepath.Abs(pgsqlBin)
 		}
-		stmt := fmt.Sprintf("CREATE DATABASE %s OWNER %s ENCODING UTF8", app.config.db.name, app.config.db.owner)
-		psqlArgs := []string{"-U", app.config.db.owner, "-d", "postgres", "-c", stmt}
+		stmt := fmt.Sprintf("CREATE DATABASE %s OWNER %s ENCODING UTF8", app.Config.DB.Name, app.Config.DB.Owner)
+		psqlArgs := []string{"-U", app.Config.DB.Owner, "-d", "postgres", "-c", stmt}
 
 		psqlCmd := exec.Command(pgsqlBin, psqlArgs...)
 		var outb, errb bytes.Buffer
@@ -118,37 +118,37 @@ to quickly create a Cobra application.`,
 		err = psqlCmd.Run()
 		if err != nil {
 			if strings.Contains(errb.String(), "already exists") {
-				app.infoLog.Println("Database already exists, skipping creation...")
+				app.InfoLog.Println("Database already exists, skipping creation...")
 			} else {
-				app.errorLog.Fatal(errb.String())
+				app.ErrorLog.Fatal(errb.String())
 			}
 		}
 
 		// 2. restore backup
-		app.infoLog.Println("Restoring database")
+		app.InfoLog.Println("Restoring database")
 		pgRestoreBin, err := exec.LookPath("pg_restore")
 		if err == nil {
 			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
 		}
-		pgRestoreArgs := []string{"-U", app.config.db.owner, "-F", "c", "-c", "-v", fmt.Sprintf("--dbname=%s", app.config.db.name), "-h", app.config.db.host, filepath.Join(app.config.tmpDir, backupFile)}
+		pgRestoreArgs := []string{"-U", app.Config.DB.Owner, "-F", "c", "-c", "-v", fmt.Sprintf("--dbname=%s", app.Config.DB.Name), "-h", app.Config.DB.Host, filepath.Join(app.Config.TmpDir, backupFile)}
 
 		pgRestoreCmd := exec.Command(pgRestoreBin, pgRestoreArgs...)
 		err = pgRestoreCmd.Run()
 		if err != nil {
-			app.infoLog.Print(err)
+			app.InfoLog.Print(err)
 		}
-		app.infoLog.Println("Database successfully restored.")
+		app.InfoLog.Println("Database successfully restored.")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(restoreCmd)
 
-	restoreCmd.Flags().StringVarP(&app.config.db.name, "dbName", "d", "ioverlander_production", "Database name")
-	restoreCmd.Flags().StringVarP(&app.config.db.owner, "dbOwner", "o", "ioverlander", "Database user")
-	restoreCmd.Flags().StringVarP(&app.config.docker.namespace, "namespace", "n", "bueti", "Docker Namespace")
-	restoreCmd.Flags().StringVarP(&app.config.docker.repository, "repository", "r", "", "Docker Repository")
-	restoreCmd.Flags().StringVarP(&app.config.docker.tag, "tag", "t", "", "Tag of the image with the backup in it")
+	restoreCmd.Flags().StringVarP(&app.Config.DB.Name, "dbName", "d", "ioverlander_production", "Database name")
+	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "dbOwner", "o", "ioverlander", "Database user")
+	restoreCmd.Flags().StringVarP(&app.Config.Docker.Namespace, "Namespace", "n", "bueti", "Docker Namespace")
+	restoreCmd.Flags().StringVarP(&app.Config.Docker.Repository, "Repository", "r", "", "Docker Repository")
+	restoreCmd.Flags().StringVarP(&app.Config.Docker.Tag, "tag", "t", "", "Tag of the image with the backup in it")
 }
 
 type DockerImage struct {
