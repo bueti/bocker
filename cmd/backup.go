@@ -78,13 +78,11 @@ func init() {
 	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "host", "", "localhost", "Hostname of the database host")
 	backupCmd.Flags().StringVarP(&app.Config.DB.Name, "name", "n", "", "Database name (required)")
 	backupCmd.Flags().StringVarP(&app.Config.DB.User, "user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVarP(&app.Config.Docker.Namespace, "namespace", "", "buet", "Repository to push image to")
-	backupCmd.Flags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "ioverlander_backup", "Repository to push image to")
 	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("name")
 	backupCmd.MarkFlagRequired("user")
 
-	app.Config.Docker.Tag = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.DB.DateTime)
+	app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.DB.DateTime)
 
 }
