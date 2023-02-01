@@ -34,15 +34,3 @@ Flags:
 Use "bocker [command] --help" for more information about a command.
 ```
 
-## TODO
-
-- [x] Create application object
-- [x] use MkdirTemp
-- [x] Create Makefile
-- [x] Build with goreleaser
-- [x] Create a better README
-- [ ] Publish to a Homebrew Tap
-- [ ] Sign the binaries
-- [ ] Make it work with psql in a Docker container
-- [ ] I really should learn how to write tests..
-- [ ] How about using the Docker SDK instead of exec.command?
