@@ -22,12 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-
-	"bocker.software-services.dev/pkg/bocker/docker"
+	"bocker.software-services.dev/pkg/bocker/backup"
 	"github.com/spf13/cobra"
 )
 
@@ -37,82 +32,16 @@ var listCmd = &cobra.Command{
 	Short: "List available backups",
 	Run: func(cmd *cobra.Command, args []string) {
 
-		c, err := docker.NewClient()
+		err := backup.List(*app)
 		if err != nil {
-			app.errorLog.Fatal(err)
+			app.ErrorLog.Fatal(err)
 		}
 
-		path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", app.config.docker.namespace, app.config.docker.repository)
-		resp, err := c.DoRequest(http.MethodGet, path, nil)
-		if err != nil {
-			app.errorLog.Fatal(err)
-		}
-		if resp.StatusCode == 200 {
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				app.errorLog.Fatal(err)
-			}
-			var tags ListTagsResponse
-			err = json.Unmarshal(bodyBytes, &tags)
-			if err != nil {
-				app.errorLog.Fatal(err)
-			}
-
-			for _, v := range tags.Results {
-				fmt.Println(v.Name, v.FullSize, v.LastUpdaterUsername)
-			}
-		} else {
-			app.infoLog.Println(resp.StatusCode)
-		}
 	},
 }
 
 func init() {
 	backupCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&app.config.docker.namespace, "namespace", "n", "bueti", "Docker Namespace")
-	listCmd.Flags().StringVarP(&app.config.docker.repository, "repository", "r", "ioverlander_backup", "Docker Repository")
-}
-
-type Layer struct {
-	Digest      string `json:"digest"`
-	Size        int    `json:"size"`
-	Instruction string `json:"instruction"`
-}
-
-type Images struct {
-	Architecture string  `json:"architecture"`
-	Features     string  `json:"features"`
-	Variant      string  `json:"variant,omitempty"`
-	Digest       string  `json:"digest"`
-	Layers       []Layer `json:"layers"`
-	OS           string  `json:"os"`
-	OSFeatures   string  `json:"os_features"`
-	OSVersion    string  `json:"os_version,omitempty"`
-	Size         int     `json:"size"`
-	Status       string  `json:"status"`
-	LastPulled   string  `json:"last_pulled,omitempty"`
-	LastPushed   string  `json:"last_pushed"`
-}
-
-type Response struct {
-	ID                  int      `json:"id"`
-	Images              []Images `json:"images"`
-	Creator             int      `json:"creator"`
-	LastUpdated         string   `json:"last_updated"`
-	LastUpdater         int      `json:"last_updater"`
-	LastUpdaterUsername string   `json:"last_updater_username"`
-	Name                string   `json:"name"`
-	Repository          int      `json:"repository"`
-	FullSize            int      `json:"full_size"`
-	V2                  bool     `json:"v2"`
-	Status              string   `json:"status"`
-	TagLastPulled       string   `json:"tag_last_pulled,omitempty"`
-	TagLastPushed       string   `json:"tag_last_pushed"`
-}
-
-type ListTagsResponse struct {
-	Count    int        `json:"count"`
-	Next     string     `json:"next,omitempty"`
-	Previous string     `json:"previous,omitempty"`
-	Results  []Response `json:"results"`
+	listCmd.Flags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
+	listCmd.Flags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "ioverlander_backup", "Docker Repository")
 }

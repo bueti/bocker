@@ -24,37 +24,17 @@ package cmd
 import (
 	"log"
 	"os"
+	"time"
 
+	"bocker.software-services.dev/pkg/bocker/config"
 	"github.com/spf13/cobra"
 )
 
-type config struct {
-	docker struct {
-		namespace  string
-		repository string
-		tag        string
-	}
-	db struct {
-		name        string
-		user        string
-		host        string
-		owner       string
-		exportRoles bool
-	}
-	tmpDir string
-}
-
-type application struct {
-	config   config
-	errorLog *log.Logger
-	infoLog  *log.Logger
-}
-
 // rootCmd represents the base command when called without any subcommands
 var (
-	app = &application{
-		errorLog: log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
-		infoLog:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
+	app = &config.Application{
+		ErrorLog: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+		InfoLog:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 	}
 
 	rootCmd = &cobra.Command{
@@ -69,18 +49,41 @@ Of course, Bocker will also do the reverse and restore your database from a back
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	err := rootCmd.Execute()
+	// This seems wrong...
+	// TODO: What would be the idiomatic way to do this?
+	tmpDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		app.ErrorLog.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+	app.Config.TmpDir = tmpDir
+
+	err = rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
 func init() {
-	tmpDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		app.errorLog.Fatal(err)
+	username, ok := os.LookupEnv("DOCKER_USERNAME")
+	if !ok {
+		app.ErrorLog.Fatal("DOCKER_USERNAME not set")
 	}
-	defer os.RemoveAll(tmpDir)
+	app.Config.Docker.Username = username
 
-	app.config.tmpDir = tmpDir
+	password, ok := os.LookupEnv("DOCKER_PAT")
+	if !ok {
+		app.ErrorLog.Fatal("DOCKER_PAT not set")
+	}
+	app.Config.Docker.Password = password
+
+	host, ok := os.LookupEnv("DOCKER_HOST")
+	if !ok {
+		app.Config.Docker.Host = "https://hub.docker.com"
+	} else {
+		app.Config.Docker.Host = host
+	}
+
+	dt := time.Now()
+	app.Config.DB.DateTime = dt.Format("2006-01-02_15-04-05")
 }
