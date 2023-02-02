@@ -20,10 +20,11 @@ type config struct {
 		User           string
 		Host           string
 		Owner          string
-		ExportRoles    bool
 		DateTime       string
 		BackupFileName string
 		RolesFileName  string
+		ExportRoles    bool
+		ImportRoles    bool
 	}
 	TmpDir string
 }

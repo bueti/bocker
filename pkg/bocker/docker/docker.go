@@ -19,7 +19,7 @@ type DockerImage struct {
 }
 
 // Copies a file from a running docker container to the app.Config.TmpDir
-func Copy(app config.Application) error {
+func CopyFrom(app config.Application) error {
 	var outb, errb bytes.Buffer
 	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
 
@@ -30,6 +30,27 @@ func Copy(app config.Application) error {
 
 	// docker cp ${DB_CONTAINER}:/${BACKUP_FILE_NAME} ${BACKUP_DIR}/
 	cpArgs := []string{"cp", app.Config.Docker.ContainerID + ":/var/tmp/" + app.Config.DB.BackupFileName, app.Config.TmpDir}
+	cpCmd := exec.Command(dockerBin, cpArgs...)
+	cpCmd.Stdout = &outb
+	cpCmd.Stderr = &errb
+	err = cpCmd.Run()
+	if err != nil {
+		return fmt.Errorf(errb.String())
+	}
+	return nil
+}
+
+// Copies a file to a running docker container to /var/tmp
+func CopyTo(container, filename string) error {
+	var outb, errb bytes.Buffer
+
+	dockerBin, err := exec.LookPath("docker")
+	if err == nil {
+		dockerBin, _ = filepath.Abs(dockerBin)
+	}
+
+	// docker cp <filename> <container id>:/var/tmp/<filename>
+	cpArgs := []string{"cp", filename, container + ":/var/tmp/"}
 	cpCmd := exec.Command(dockerBin, cpArgs...)
 	cpCmd.Stdout = &outb
 	cpCmd.Stderr = &errb
@@ -100,7 +121,6 @@ func Pull(app config.Application) error {
 	}
 
 	// pull image from registry
-	app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 	app.InfoLog.Printf("Pulling image (%s) from registry...", app.Config.Docker.ImagePath)
 	pullArgs := []string{"pull", app.Config.Docker.ImagePath}
 	pullCmd := exec.Command(dockerBin, pullArgs...)

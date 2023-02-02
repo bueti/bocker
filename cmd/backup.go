@@ -62,7 +62,7 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 		}
 
 		if app.Config.Docker.ContainerID != "" {
-			err := docker.Copy(*app)
+			err := docker.CopyFrom(*app)
 			if err != nil {
 				app.ErrorLog.Fatal(err)
 			}

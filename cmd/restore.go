@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"bocker.software-services.dev/pkg/bocker/db"
 	"bocker.software-services.dev/pkg/bocker/docker"
@@ -40,7 +41,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
+		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s_backup:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
 		err := docker.Pull(*app)
 		if err != nil {
@@ -59,6 +60,20 @@ to quickly create a Cobra application.`,
 			app.ErrorLog.Fatal(err)
 		}
 
+		backupFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.Docker.Tag))
+		err = docker.CopyTo(app.Config.Docker.ContainerID, backupFile)
+		if err != nil {
+			app.ErrorLog.Fatal(err)
+		}
+
+		if app.Config.DB.ImportRoles {
+			rolesFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.Name, app.Config.DB.DateTime))
+			err = docker.CopyTo(app.Config.Docker.ContainerID, rolesFile)
+			if err != nil {
+				app.ErrorLog.Fatal(err)
+			}
+		}
+
 		app.InfoLog.Println("Restoring database...")
 		err = db.Restore(*app)
 		if err != nil {
@@ -73,4 +88,7 @@ func init() {
 
 	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "db-owner", "o", "", "Database user")
 	restoreCmd.Flags().StringVarP(&app.Config.Docker.Tag, "tag", "", "", "Tag of the image with the backup in it")
+	restoreCmd.Flags().BoolVar(&app.Config.DB.ImportRoles, "import-roles", false, "Create roles from backup")
+
+	restoreCmd.MarkFlagRequired("tag")
 }
