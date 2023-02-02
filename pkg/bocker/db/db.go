@@ -54,18 +54,40 @@ func Dump(app config.Application) error {
 }
 
 func ExportRoles(app config.Application) error {
+	var err error
 	var outb, errb bytes.Buffer
-	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.Name, app.Config.DB.DateTime)
-	rolesFilePath := filepath.Join(app.Config.TmpDir, app.Config.DB.RolesFileName)
+	var rolesFilePath string
+	var pgDumpallBin string
+	var pgDumpallArgs []string
 
-	pgDumallBin, err := exec.LookPath("pg_dumpall")
-	if err == nil {
-		pgDumallBin, _ = filepath.Abs(pgDumallBin)
+	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.Name, app.Config.DB.DateTime)
+
+	if app.Config.Docker.ContainerID != "" {
+		rolesFilePath = filepath.Join("/var/tmp/", app.Config.DB.RolesFileName)
 	} else {
-		return fmt.Errorf("pg_dumpall not found")
+		rolesFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.RolesFileName)
 	}
 
-	bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath))
+	pgDumpallArgs = []string{"-U", app.Config.DB.User, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath)}
+
+	if app.Config.Docker.ContainerID != "" {
+		pgDumpallBin, err = exec.LookPath("docker")
+		if err == nil {
+			pgDumpallBin, _ = filepath.Abs(pgDumpallBin)
+		} else {
+			return fmt.Errorf("docker not found")
+		}
+		pgDumpallArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_dumpall"}, pgDumpallArgs...)
+	} else {
+		pgDumpallBin, err = exec.LookPath("pg_dumpall")
+		if err == nil {
+			pgDumpallBin, _ = filepath.Abs(pgDumpallBin)
+		} else {
+			return fmt.Errorf("pg_dumpall not found")
+		}
+	}
+
+	bkpCmd := exec.Command(pgDumpallBin, pgDumpallArgs...)
 	bkpCmd.Stdout = &outb
 	bkpCmd.Stderr = &errb
 	err = bkpCmd.Run()
