@@ -11,18 +11,39 @@ import (
 )
 
 func Dump(app config.Application) error {
+	var err error
 	var outb, errb bytes.Buffer
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
-	backupFilePath := filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
+	var pgDumpBin string
+	var backupFilePath string
+	var pgDumpArgs []string
 
-	pgDumpBin, err := exec.LookPath("pg_dump")
-	if err == nil {
-		pgDumpBin, _ = filepath.Abs(pgDumpBin)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
+	if app.Config.Docker.ContainerID != "" {
+		backupFilePath = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
 	} else {
-		return fmt.Errorf("pg_dump not found")
+		backupFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
 	}
 
-	bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", app.Config.DB.Host, app.Config.DB.Name, "-f", backupFilePath)
+	pgDumpArgs = []string{"-F", "c", "-U", app.Config.DB.User, "-h", app.Config.DB.Host, app.Config.DB.Name, "-f", backupFilePath}
+
+	if app.Config.Docker.ContainerID != "" {
+		pgDumpBin, err = exec.LookPath("docker")
+		if err == nil {
+			pgDumpBin, _ = filepath.Abs(pgDumpBin)
+		} else {
+			return fmt.Errorf("docker not found")
+		}
+		pgDumpArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_dump"}, pgDumpArgs...)
+	} else {
+		pgDumpBin, err = exec.LookPath("pg_dump")
+		if err == nil {
+			pgDumpBin, _ = filepath.Abs(pgDumpBin)
+		} else {
+			return fmt.Errorf("pg_dump not found")
+		}
+	}
+
+	bkpCmd := exec.Command(pgDumpBin, pgDumpArgs...)
 	bkpCmd.Stdout = &outb
 	bkpCmd.Stderr = &errb
 	err = bkpCmd.Run()
@@ -33,18 +54,40 @@ func Dump(app config.Application) error {
 }
 
 func ExportRoles(app config.Application) error {
+	var err error
 	var outb, errb bytes.Buffer
-	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.Name, app.Config.DB.DateTime)
-	rolesFilePath := filepath.Join(app.Config.TmpDir, app.Config.DB.RolesFileName)
+	var rolesFilePath string
+	var pgDumpallBin string
+	var pgDumpallArgs []string
 
-	pgDumallBin, err := exec.LookPath("pg_dumpall")
-	if err == nil {
-		pgDumallBin, _ = filepath.Abs(pgDumallBin)
+	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.Name, app.Config.DB.DateTime)
+
+	if app.Config.Docker.ContainerID != "" {
+		rolesFilePath = filepath.Join("/var/tmp/", app.Config.DB.RolesFileName)
 	} else {
-		return fmt.Errorf("pg_dumpall not found")
+		rolesFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.RolesFileName)
 	}
 
-	bkpCmd := exec.Command(pgDumallBin, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath))
+	pgDumpallArgs = []string{"-U", app.Config.DB.User, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath)}
+
+	if app.Config.Docker.ContainerID != "" {
+		pgDumpallBin, err = exec.LookPath("docker")
+		if err == nil {
+			pgDumpallBin, _ = filepath.Abs(pgDumpallBin)
+		} else {
+			return fmt.Errorf("docker not found")
+		}
+		pgDumpallArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_dumpall"}, pgDumpallArgs...)
+	} else {
+		pgDumpallBin, err = exec.LookPath("pg_dumpall")
+		if err == nil {
+			pgDumpallBin, _ = filepath.Abs(pgDumpallBin)
+		} else {
+			return fmt.Errorf("pg_dumpall not found")
+		}
+	}
+
+	bkpCmd := exec.Command(pgDumpallBin, pgDumpallArgs...)
 	bkpCmd.Stdout = &outb
 	bkpCmd.Stderr = &errb
 	err = bkpCmd.Run()
@@ -55,17 +98,29 @@ func ExportRoles(app config.Application) error {
 }
 
 func CreateDB(app config.Application) error {
+	var err error
 	var outb, errb bytes.Buffer
-
-	pgsqlBin, err := exec.LookPath("psql")
-	if err == nil {
-		pgsqlBin, _ = filepath.Abs(pgsqlBin)
-	} else {
-		return fmt.Errorf("psql not found")
-	}
+	var pgsqlBin string
 
 	stmt := fmt.Sprintf("CREATE DATABASE %s OWNER %s ENCODING UTF8", app.Config.DB.Name, app.Config.DB.Owner)
 	psqlArgs := []string{"-U", app.Config.DB.Owner, "-d", "postgres", "-c", stmt}
+
+	if app.Config.Docker.ContainerID != "" {
+		pgsqlBin, err = exec.LookPath("docker")
+		if err == nil {
+			pgsqlBin, _ = filepath.Abs(pgsqlBin)
+		} else {
+			return fmt.Errorf("docker not found")
+		}
+		psqlArgs = append([]string{"exec", app.Config.Docker.ContainerID, "psql"}, psqlArgs...)
+	} else {
+		pgsqlBin, err = exec.LookPath("psql")
+		if err == nil {
+			pgsqlBin, _ = filepath.Abs(pgsqlBin)
+		} else {
+			return fmt.Errorf("psql not found")
+		}
+	}
 
 	psqlCmd := exec.Command(pgsqlBin, psqlArgs...)
 	psqlCmd.Stdout = &outb
@@ -82,22 +137,43 @@ func CreateDB(app config.Application) error {
 }
 
 func Restore(app config.Application) error {
+	var err error
 	var outb, errb bytes.Buffer
-
-	pgRestoreBin, err := exec.LookPath("pg_restore")
-	if err == nil {
-		pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
-	} else {
-		return fmt.Errorf("psql not found")
-	}
+	var pgRestoreBin string
+	var backupFile string
 
 	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.Docker.Tag)
+
+	if app.Config.Docker.ContainerID != "" {
+		backupFile = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
+	} else {
+		backupFile = filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
+	}
+
 	pgRestoreArgs := []string{
 		"-U", app.Config.DB.Owner, "-F", "c", "-c", "-v",
 		fmt.Sprintf("--dbname=%s", app.Config.DB.Name),
 		"-h", app.Config.DB.Host,
-		filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName),
+		backupFile,
 	}
+
+	if app.Config.Docker.ContainerID != "" {
+		pgRestoreBin, err = exec.LookPath("docker")
+		if err == nil {
+			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
+		} else {
+			return fmt.Errorf("docker not found")
+		}
+		pgRestoreArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_restore"}, pgRestoreArgs...)
+	} else {
+		pgRestoreBin, err = exec.LookPath("pg_restore")
+		if err == nil {
+			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
+		} else {
+			return fmt.Errorf("pg_restore not found")
+		}
+	}
+
 	pgRestoreCmd := exec.Command(pgRestoreBin, pgRestoreArgs...)
 	pgRestoreCmd.Stdout = &outb
 	pgRestoreCmd.Stderr = &errb
