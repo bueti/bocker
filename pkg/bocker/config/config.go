@@ -6,13 +6,14 @@ import (
 
 type config struct {
 	Docker struct {
-		Namespace  string
-		Repository string
-		Tag        string
-		Username   string
-		Password   string
-		Host       string
-		ImagePath  string
+		Namespace   string
+		Repository  string
+		Tag         string
+		Username    string
+		Password    string
+		Host        string
+		ImagePath   string
+		ContainerID string
 	}
 	DB struct {
 		Name           string

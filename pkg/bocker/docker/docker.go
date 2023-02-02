@@ -18,8 +18,30 @@ type DockerImage struct {
 	Layers   []string `json:"Layers"`
 }
 
+func Copy(app config.Application) error {
+	var outb, errb bytes.Buffer
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
+
+	dockerBin, err := exec.LookPath("docker")
+	if err == nil {
+		dockerBin, _ = filepath.Abs(dockerBin)
+	}
+
+	// docker cp ${DB_CONTAINER}:/${BACKUP_FILE_NAME} ${BACKUP_DIR}/
+	cpArgs := []string{"cp", app.Config.Docker.ContainerID + ":/var/tmp/" + app.Config.DB.BackupFileName, app.Config.TmpDir}
+	cpCmd := exec.Command(dockerBin, cpArgs...)
+	cpCmd.Stdout = &outb
+	cpCmd.Stderr = &errb
+	err = cpCmd.Run()
+	if err != nil {
+		return fmt.Errorf(errb.String())
+	}
+	return nil
+}
+
 func Build(app config.Application) error {
 	var outb, errb bytes.Buffer
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
 
 	dockerBin, err := exec.LookPath("docker")
 	if err == nil {
@@ -31,11 +53,13 @@ func Build(app config.Application) error {
 		buildArgs = []string{"build",
 			"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
 			"--build-arg", fmt.Sprintf("roles_file=%s", app.Config.DB.RolesFileName),
-			"-t", app.Config.Docker.Tag, "-f", "internal/Dockerfile.backup", app.Config.TmpDir}
+			"-t", app.Config.Docker.ImagePath,
+			"-f", "internal/Dockerfile.backup", app.Config.TmpDir}
 	} else {
 		buildArgs = []string{"build",
 			"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
-			"-t", app.Config.Docker.Tag, "-f", "internal/Dockerfile.backup", app.Config.TmpDir}
+			"-t", app.Config.Docker.ImagePath,
+			"-f", "internal/Dockerfile.backup", app.Config.TmpDir}
 	}
 
 	buildCmd := exec.Command(dockerBin, buildArgs...)

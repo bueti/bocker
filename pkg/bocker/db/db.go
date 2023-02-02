@@ -11,18 +11,39 @@ import (
 )
 
 func Dump(app config.Application) error {
+	var err error
 	var outb, errb bytes.Buffer
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
-	backupFilePath := filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
+	var pgDumpBin string
+	var backupFilePath string
+	var pgDumpArgs []string
 
-	pgDumpBin, err := exec.LookPath("pg_dump")
-	if err == nil {
-		pgDumpBin, _ = filepath.Abs(pgDumpBin)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
+	if app.Config.Docker.ContainerID != "" {
+		backupFilePath = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
 	} else {
-		return fmt.Errorf("pg_dump not found")
+		backupFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
 	}
 
-	bkpCmd := exec.Command(pgDumpBin, "-F", "c", "-U", "postgres", "-h", app.Config.DB.Host, app.Config.DB.Name, "-f", backupFilePath)
+	pgDumpArgs = []string{"-F", "c", "-U", app.Config.DB.User, "-h", app.Config.DB.Host, app.Config.DB.Name, "-f", backupFilePath}
+
+	if app.Config.Docker.ContainerID != "" {
+		pgDumpBin, err = exec.LookPath("docker")
+		if err == nil {
+			pgDumpBin, _ = filepath.Abs(pgDumpBin)
+		} else {
+			return fmt.Errorf("docker not found")
+		}
+		pgDumpArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_dump"}, pgDumpArgs...)
+	} else {
+		pgDumpBin, err = exec.LookPath("pg_dump")
+		if err == nil {
+			pgDumpBin, _ = filepath.Abs(pgDumpBin)
+		} else {
+			return fmt.Errorf("pg_dump not found")
+		}
+	}
+
+	bkpCmd := exec.Command(pgDumpBin, pgDumpArgs...)
 	bkpCmd.Stdout = &outb
 	bkpCmd.Stderr = &errb
 	err = bkpCmd.Run()
