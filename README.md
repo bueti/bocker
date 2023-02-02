@@ -13,6 +13,13 @@ Is it a good idea? Probably not, but it solved a problem I had!
 
 ## Usage
 
+There are some assumptions made:
+
+- The host you are running `bocker` has Docker installed
+- `docker login` was run successfully and you must have permission to push images
+
+Use `-h` to get help for each subcommand:
+
 ```sh
 $ bocker --help
 Bocker is a command line tool which creates a backup from a PostgreSQL database, 
@@ -29,8 +36,11 @@ Available Commands:
   restore     Restores a Posgres database
 
 Flags:
-  -h, --help   help for bocker
+  -c, --container-id string   ID of container running PostgreSQL
+  -d, --db-name string        Database name
+  -h, --help                  help for bocker
+  -n, --namespace string      Docker Namespace (default "bueti")
+  -r, --repository string     Docker Repository
 
 Use "bocker [command] --help" for more information about a command.
 ```
-

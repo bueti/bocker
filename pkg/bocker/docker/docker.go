@@ -18,6 +18,7 @@ type DockerImage struct {
 	Layers   []string `json:"Layers"`
 }
 
+// Copies a file from a running docker container to the app.Config.TmpDir
 func Copy(app config.Application) error {
 	var outb, errb bytes.Buffer
 	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)

@@ -62,7 +62,6 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 		}
 
 		if app.Config.Docker.ContainerID != "" {
-			// copy file from docker image
 			err := docker.Copy(*app)
 			if err != nil {
 				app.ErrorLog.Fatal(err)
@@ -87,7 +86,6 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 func init() {
 	rootCmd.AddCommand(backupCmd)
 	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
-	backupCmd.Flags().StringVarP(&app.Config.DB.Name, "db-name", "d", "", "Database name (required)")
 	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
 	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 

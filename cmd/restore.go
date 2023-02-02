@@ -71,7 +71,6 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(restoreCmd)
 
-	restoreCmd.Flags().StringVarP(&app.Config.DB.Name, "dbName", "d", "ioverlander_production", "Database name")
-	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "dbOwner", "o", "ioverlander", "Database user")
+	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "db-owner", "o", "", "Database user")
 	restoreCmd.Flags().StringVarP(&app.Config.Docker.Tag, "tag", "", "", "Tag of the image with the backup in it")
 }
