@@ -12,6 +12,7 @@ type config struct {
 		Username   string
 		Password   string
 		Host       string
+		ImagePath  string
 	}
 	DB struct {
 		Name           string

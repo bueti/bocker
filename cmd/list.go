@@ -42,6 +42,4 @@ var listCmd = &cobra.Command{
 
 func init() {
 	backupCmd.AddCommand(listCmd)
-	listCmd.Flags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
-	listCmd.Flags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "ioverlander_backup", "Docker Repository")
 }

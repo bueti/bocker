@@ -65,6 +65,9 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "Namespace", "n", "bueti", "Docker Namespace")
+	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "Repository", "r", "", "Docker Repository")
+
 	username, ok := os.LookupEnv("DOCKER_USERNAME")
 	if !ok {
 		app.ErrorLog.Fatal("DOCKER_USERNAME not set")
