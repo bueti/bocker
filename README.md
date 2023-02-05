@@ -11,6 +11,22 @@ Is it a good idea? Probably not, but it solved a problem I had!
 > **Warning**  
 > Do **not** push the image to a publich repository, or everybody in the world will have access to your database backup!
 
+## Installation
+
+### Homebrew
+
+Linux and macOS binaries are available in Homebrew:
+
+```sh
+brew install bueti/tap/bocker
+```
+
+Or brew `tap bueti/tap` and then `brew install bocker`.
+
+### Manual
+
+Download the appropriate file from the [Releases](https://github.com/bueti/bocker/releases) page, unpack the file and put the binary in your PATH.
+
 ## Usage
 
 There are some assumptions made:
