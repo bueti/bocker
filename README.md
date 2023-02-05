@@ -17,6 +17,8 @@ There are some assumptions made:
 
 - The host you are running `bocker` has Docker installed
 - `docker login` was run successfully and you must have permission to push images
+- The environment variables `DOCKER_USERNAME` and `DOCKER_PAT` must be set
+- The Personal Access Token requires the following permissions: `Read, Write, Delete`
 
 Use `-h` to get help for each subcommand:
 
