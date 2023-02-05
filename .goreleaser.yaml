@@ -1,0 +1,90 @@
+# .goreleaser.yaml
+builds:
+  - binary: bocker
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+release:
+  prerelease: auto
+
+brews:
+  -
+    # Name template of the recipe
+    name: bocker
+
+    # NOTE: make sure the url_template, the token and given repo (github or
+    # gitlab) owner and name are from the same kind.
+    # We will probably unify this in the next major version like it is
+    # done with scoop.
+
+    # GitHub/GitLab repository to push the formula to
+    tap:
+      # Repository owner template. (templateable)
+      owner: bueti
+
+      # Repository name. (templateable)
+      name: homebrew-bueti
+
+      # Optionally a branch can be provided. (templateable)
+      #
+      # Defaults to the default repository branch.
+      branch: main
+
+
+    # Template for the url which is determined by the given Token (github,
+    # gitlab or gitea)
+    #
+    # Default depends on the client.
+    url_template: "https://github.com/bueti/bocker/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+
+    # Allows you to set a custom download strategy. Note that you'll need
+    # to implement the strategy and add it to your tap repository.
+    # Example: https://docs.brew.sh/Formula-Cookbook#specifying-the-download-strategy-explicitly
+    # Default is empty.
+    download_strategy: CurlDownloadStrategy
+
+    # Git author used to commit to the repository.
+    # Defaults are shown.
+    commit_author:
+      name: goreleaserbot
+      email: bot@software-services.dev
+
+    # The project name and current git tag are used in the format string.
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+    # Folder inside the repository to put the formula.
+    # Default is the root folder.
+    folder: Formula
+
+    # Your app's homepage.
+    # Default is empty.
+    homepage: "https://github.com/buet/bocker"
+
+    # Template of your app's description.
+    # Default is empty.
+    description: |
+      Bocker is a command line tool which creates a backup from a PostgreSQL database, 
+      wraps it in a Docker image, and uploads it to Docker Hub. 
+      Of course, Bocker will also do the reverse and restore your database from a backup in Docker Hub.
+
+    license: "MIT"
+
+    # Setting this will prevent goreleaser to actually try to commit the updated
+    # formula - instead, the formula file will be stored on the dist folder only,
+    # leaving the responsibility of publishing it to the user.
+    # If set to auto, the release will not be uploaded to the homebrew tap
+    # in case there is an indicator for prerelease in the tag e.g. v1.0.0-rc1
+    # Default is false.
+    skip_upload: auto
+
+
+    # Packages your package depends on.
+    dependencies:
+      - name: docker
