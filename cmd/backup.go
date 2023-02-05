@@ -45,7 +45,7 @@ Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 		app.Config.Docker.Tag = app.Config.DB.DateTime
-		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s_backup:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
+		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
 		app.InfoLog.Println("Creating backup...")
 		err := db.Dump(*app)
@@ -85,7 +85,6 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
 	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
 	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 

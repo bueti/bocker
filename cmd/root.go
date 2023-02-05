@@ -68,7 +68,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
-	rootCmd.PersistentFlags().StringVarP(&app.Config.DB.Name, "db-name", "d", "", "Database name")
+	rootCmd.PersistentFlags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
+	rootCmd.PersistentFlags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
 
 	username, ok := os.LookupEnv("DOCKER_USERNAME")
 	if !ok {

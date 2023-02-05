@@ -17,14 +17,14 @@ func Dump(app config.Application) error {
 	var backupFilePath string
 	var pgDumpArgs []string
 
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 	if app.Config.Docker.ContainerID != "" {
 		backupFilePath = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
 	} else {
 		backupFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
 	}
 
-	pgDumpArgs = []string{"-F", "c", "-U", app.Config.DB.User, "-h", app.Config.DB.Host, app.Config.DB.Name, "-f", backupFilePath}
+	pgDumpArgs = []string{"-F", "c", "-U", app.Config.DB.User, "-h", app.Config.DB.Host, app.Config.DB.SourceName, "-f", backupFilePath}
 
 	if app.Config.Docker.ContainerID != "" {
 		pgDumpBin, err = exec.LookPath("docker")
@@ -60,7 +60,7 @@ func ExportRoles(app config.Application) error {
 	var pgDumpallBin string
 	var pgDumpallArgs []string
 
-	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.Name, app.Config.DB.DateTime)
+	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
 	if app.Config.Docker.ContainerID != "" {
 		rolesFilePath = filepath.Join("/var/tmp/", app.Config.DB.RolesFileName)
@@ -102,7 +102,7 @@ func CreateDB(app config.Application) error {
 	var outb, errb bytes.Buffer
 	var pgsqlBin string
 
-	stmt := fmt.Sprintf("CREATE DATABASE %s OWNER %s ENCODING UTF8", app.Config.DB.Name, app.Config.DB.Owner)
+	stmt := fmt.Sprintf("CREATE DATABASE %s OWNER %s ENCODING UTF8", app.Config.DB.TargetName, app.Config.DB.Owner)
 	psqlArgs := []string{"-U", app.Config.DB.Owner, "-d", "postgres", "-c", stmt}
 
 	if app.Config.Docker.ContainerID != "" {
@@ -142,7 +142,7 @@ func Restore(app config.Application) error {
 	var pgRestoreBin string
 	var backupFile string
 
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.Docker.Tag)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag)
 
 	if app.Config.Docker.ContainerID != "" {
 		backupFile = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
@@ -152,7 +152,7 @@ func Restore(app config.Application) error {
 
 	pgRestoreArgs := []string{
 		"-U", app.Config.DB.Owner, "-F", "c", "-c", "-v",
-		fmt.Sprintf("--dbname=%s", app.Config.DB.Name),
+		fmt.Sprintf("--dbname=%s", app.Config.DB.TargetName),
 		"-h", app.Config.DB.Host,
 		backupFile,
 	}

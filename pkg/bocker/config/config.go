@@ -16,7 +16,8 @@ type config struct {
 		ContainerID string
 	}
 	DB struct {
-		Name           string
+		SourceName     string
+		TargetName     string
 		User           string
 		Host           string
 		Owner          string

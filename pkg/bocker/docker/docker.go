@@ -21,7 +21,7 @@ type DockerImage struct {
 // Copies a file from a running docker container to the app.Config.TmpDir
 func CopyFrom(app config.Application) error {
 	var outb, errb bytes.Buffer
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
 	dockerBin, err := exec.LookPath("docker")
 	if err == nil {
@@ -63,7 +63,7 @@ func CopyTo(container, filename string) error {
 
 func Build(app config.Application) error {
 	var outb, errb bytes.Buffer
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.DB.DateTime)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
 	dockerBin, err := exec.LookPath("docker")
 	if err == nil {
@@ -173,7 +173,7 @@ func Unpack(app config.Application) error {
 		return err
 	}
 
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.Name, app.Config.Docker.Tag)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag)
 	err = helpers.Untar(filepath.Join(app.Config.TmpDir, backupLayerTar), app.Config.DB.BackupFileName, app.Config.TmpDir)
 	if err != nil {
 		return err
