@@ -2,6 +2,7 @@ package docker
 
 import (
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,9 @@ import (
 	"bocker.software-services.dev/pkg/bocker/config"
 	"bocker.software-services.dev/pkg/bocker/helpers"
 )
+
+//go:embed "Dockerfile"
+var Dockerfile []byte
 
 type DockerImage struct {
 	Config   string   `json:"Config"`
@@ -63,8 +67,15 @@ func CopyTo(container, filename string) error {
 
 func Build(app config.Application) error {
 	var outb, errb bytes.Buffer
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
+	// write Dockerfile
+	dockerfilePath := filepath.Join(app.Config.TmpDir, "Dockerfile")
+	err := os.WriteFile(dockerfilePath, Dockerfile, 0755)
+	if err != nil {
+		return fmt.Errorf("unable to write file: %v", err)
+	}
+
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 	dockerBin, err := exec.LookPath("docker")
 	if err == nil {
 		dockerBin, _ = filepath.Abs(dockerBin)
@@ -76,12 +87,12 @@ func Build(app config.Application) error {
 			"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
 			"--build-arg", fmt.Sprintf("roles_file=%s", app.Config.DB.RolesFileName),
 			"-t", app.Config.Docker.ImagePath,
-			"-f", "internal/Dockerfile.backup", app.Config.TmpDir}
+			"-f", dockerfilePath, app.Config.TmpDir}
 	} else {
 		buildArgs = []string{"build",
 			"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
 			"-t", app.Config.Docker.ImagePath,
-			"-f", "internal/Dockerfile.backup", app.Config.TmpDir}
+			"-f", dockerfilePath, app.Config.TmpDir}
 	}
 
 	buildCmd := exec.Command(dockerBin, buildArgs...)
