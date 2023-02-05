@@ -37,7 +37,8 @@ Available Commands:
 
 Flags:
   -c, --container-id string   ID of container running PostgreSQL
-  -d, --db-name string        Database name
+      --db-host string        Hostname of the database host (default "localhost")
+  -s, --db-source string      Source database name
   -h, --help                  help for bocker
   -n, --namespace string      Docker Namespace (default "bueti")
   -r, --repository string     Docker Repository

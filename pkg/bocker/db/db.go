@@ -179,7 +179,11 @@ func Restore(app config.Application) error {
 	pgRestoreCmd.Stderr = &errb
 	err = pgRestoreCmd.Run()
 	if err != nil {
-		return fmt.Errorf(errb.String())
+		if strings.Contains(errb.String(), "errors ignored on restore") {
+			app.InfoLog.Println("Some errors during restore where ignored.")
+		} else {
+			return fmt.Errorf(errb.String())
+		}
 	}
 	return nil
 }

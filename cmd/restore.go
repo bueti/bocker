@@ -48,7 +48,7 @@ to quickly create a Cobra application.`,
 			app.ErrorLog.Fatal(err.Error())
 		}
 
-		app.InfoLog.Println("Extracting backup from Docker Image...")
+		app.InfoLog.Println("Extracting backup from Docker image...")
 		err = docker.Unpack(*app)
 		if err != nil {
 			app.ErrorLog.Fatal(err)
