@@ -21,7 +21,7 @@ Linux and macOS binaries are available in Homebrew:
 brew install bueti/tap/bocker
 ```
 
-Or brew `tap bueti/tap` and then `brew install bocker`.
+Or `brew tap bueti/tap` and then `brew install bocker`.
 
 ### Manual
 
