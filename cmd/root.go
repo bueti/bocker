@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"log"
 	"os"
 	"time"
@@ -92,4 +93,5 @@ func init() {
 
 	dt := time.Now()
 	app.Config.DB.DateTime = dt.Format("2006-01-02_15-04-05")
+	app.Config.Context = context.Background()
 }
