@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"log"
 )
 
@@ -27,7 +28,8 @@ type config struct {
 		ExportRoles    bool
 		ImportRoles    bool
 	}
-	TmpDir string
+	TmpDir  string
+	Context context.Context
 }
 
 type Application struct {

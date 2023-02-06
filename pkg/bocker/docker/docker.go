@@ -11,6 +11,7 @@ import (
 
 	"bocker.software-services.dev/pkg/bocker/config"
 	"bocker.software-services.dev/pkg/bocker/helpers"
+	"github.com/docker/docker/api/types"
 )
 
 //go:embed "Dockerfile"
@@ -106,36 +107,50 @@ func Build(app config.Application) error {
 }
 
 func Push(app config.Application) error {
-	var outb, errb bytes.Buffer
+	cli, err := NewClient()
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
 
-	dockerBin, err := exec.LookPath("docker")
-	if err == nil {
-		dockerBin, _ = filepath.Abs(dockerBin)
+	authStr, err := Authentication(app)
+	if err != nil {
+		return err
 	}
 
-	pushArgs := []string{"push", app.Config.Docker.ImagePath}
-	pushCmd := exec.Command(dockerBin, pushArgs...)
-	pushCmd.Stdout = &outb
-	pushCmd.Stderr = &errb
-	err = pushCmd.Run()
+	out, err := cli.ImagePush(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePushOptions{RegistryAuth: authStr})
 	if err != nil {
-		return fmt.Errorf(errb.String(), app.Config.Docker.ImagePath)
+		return err
+	}
+	defer out.Close()
+
+	err = ParseOutput(app, out)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func Pull(app config.Application) error {
-	dockerBin, err := exec.LookPath("docker")
-	if err == nil {
-		dockerBin, _ = filepath.Abs(dockerBin)
+	cli, err := NewClient()
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
+
+	authStr, err := Authentication(app)
+	if err != nil {
+		return err
 	}
 
-	// pull image from registry
-	app.InfoLog.Printf("Pulling image (%s) from registry...", app.Config.Docker.ImagePath)
-	pullArgs := []string{"pull", app.Config.Docker.ImagePath}
-	pullCmd := exec.Command(dockerBin, pullArgs...)
-	err = pullCmd.Run()
+	out, err := cli.ImagePull(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePullOptions{RegistryAuth: authStr})
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	err = ParseOutput(app, out)
 	if err != nil {
 		return err
 	}
