@@ -124,7 +124,6 @@ func Push(app config.Application) error {
 	}
 	defer out.Close()
 
-	// parsing of output
 	err = ParseOutput(app, out)
 	if err != nil {
 		return err
