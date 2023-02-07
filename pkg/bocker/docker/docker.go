@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -107,24 +108,24 @@ func Build(app config.Application) error {
 }
 
 func Push(app config.Application) error {
-	cli, err := NewClient()
+	c, err := NewClient()
 	if err != nil {
 		return err
 	}
-	defer cli.Close()
+	defer c.docker.Close()
 
-	authStr, err := Authentication(app)
+	authStr, err := c.Authentication(app)
 	if err != nil {
 		return err
 	}
 
-	out, err := cli.ImagePush(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePushOptions{RegistryAuth: authStr})
+	out, err := c.docker.ImagePush(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePushOptions{RegistryAuth: authStr})
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	err = ParseOutput(app, out)
+	err = c.ParseOutput(app, out)
 	if err != nil {
 		return err
 	}
@@ -133,45 +134,64 @@ func Push(app config.Application) error {
 }
 
 func Pull(app config.Application) error {
-	cli, err := NewClient()
+	c, err := NewClient()
 	if err != nil {
 		return err
 	}
-	defer cli.Close()
+	defer c.docker.Close()
 
-	authStr, err := Authentication(app)
+	authStr, err := c.Authentication(app)
 	if err != nil {
 		return err
 	}
 
-	out, err := cli.ImagePull(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePullOptions{RegistryAuth: authStr})
+	out, err := c.docker.ImagePull(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	err = ParseOutput(app, out)
+	err = c.ParseOutput(app, out)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Unpack(app config.Application) error {
-	var outb, errb bytes.Buffer
-	dockerBin, err := exec.LookPath("docker")
-	if err == nil {
-		dockerBin, _ = filepath.Abs(dockerBin)
-	}
-	outputFile := "output.tar"
+func Save(app config.Application, outputFile string) (string, error) {
 	outputFilePath := filepath.Join(app.Config.TmpDir, outputFile)
-	saveArgs := []string{"save", app.Config.Docker.ImagePath, "--output", outputFilePath}
-	saveCmd := exec.Command(dockerBin, saveArgs...)
-	saveCmd.Stdout = &outb
-	saveCmd.Stderr = &errb
-	err = saveCmd.Run()
+
+	c, err := NewClient()
 	if err != nil {
-		app.ErrorLog.Fatal(errb.String())
+		return "", err
+	}
+	defer c.docker.Close()
+
+	rc, err := c.docker.ImageSave(app.Config.Context, []string{app.Config.Docker.ImagePath})
+	if err != nil {
+		return "", err
+	}
+	defer rc.Close()
+
+	f, err := os.Create(outputFilePath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	_, err = io.Copy(f, rc)
+	if err != nil {
+		return "", err
+	}
+
+	return outputFilePath, nil
+}
+
+func Unpack(app config.Application) error {
+	outputFile := "output.tar"
+	outputFilePath, err := Save(app, outputFile)
+	if err != nil {
+		return err
 	}
 
 	// unpack layer

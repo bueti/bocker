@@ -11,16 +11,25 @@ import (
 	"github.com/docker/docker/client"
 )
 
+type APIClient struct {
+	docker client.Client
+}
+
 type Status struct {
 	Status string `json:"status"`
 	ID     string `json:"id,omitempty"`
 }
 
-func NewClient() (*client.Client, error) {
-	return client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func NewClient() (*APIClient, error) {
+	c, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, err
+	}
+
+	return &APIClient{docker: *c}, nil
 }
 
-func Authentication(app config.Application) (string, error) {
+func (c *APIClient) Authentication(app config.Application) (string, error) {
 
 	authConfig := types.AuthConfig{
 		Username: app.Config.Docker.Username,
@@ -33,7 +42,7 @@ func Authentication(app config.Application) (string, error) {
 	return base64.URLEncoding.EncodeToString(encodedJSON), nil
 }
 
-func ParseOutput(app config.Application, out io.ReadCloser) error {
+func (c *APIClient) ParseOutput(app config.Application, out io.ReadCloser) error {
 	var stati []Status
 
 	scanner := bufio.NewScanner(out)
