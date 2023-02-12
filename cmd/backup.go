@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"bocker.software-services.dev/pkg/bocker/db"
 	"bocker.software-services.dev/pkg/bocker/docker"
@@ -44,11 +45,23 @@ Requires:
 Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
+		app, err := app.Setup()
+		if err != nil {
+			app.ErrorLog.Fatal(err)
+		}
+
+		tmpDir, err := os.MkdirTemp("", "")
+		if err != nil {
+			app.ErrorLog.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+		app.Config.TmpDir = tmpDir
+
 		app.Config.Docker.Tag = app.Config.DB.DateTime
 		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
 		app.InfoLog.Println("Creating backup...")
-		err := db.Dump(*app)
+		err = db.Dump(*app)
 		if err != nil {
 			app.ErrorLog.Fatal(err.Error())
 		}

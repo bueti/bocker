@@ -22,10 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"context"
 	"log"
 	"os"
-	"time"
 
 	"bocker.software-services.dev/pkg/bocker/config"
 	"github.com/spf13/cobra"
@@ -50,16 +48,7 @@ Of course, Bocker will also do the reverse and restore your database from a back
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	// This seems wrong...
-	// TODO: What would be the idiomatic way to do this?
-	tmpDir, err := os.MkdirTemp("", "")
-	if err != nil {
-		app.ErrorLog.Fatal(err)
-	}
-	defer os.RemoveAll(tmpDir)
-	app.Config.TmpDir = tmpDir
-
-	err = rootCmd.Execute()
+	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
@@ -72,26 +61,4 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
 
-	username, ok := os.LookupEnv("DOCKER_USERNAME")
-	if !ok {
-		app.ErrorLog.Fatal("DOCKER_USERNAME not set")
-	}
-	app.Config.Docker.Username = username
-
-	password, ok := os.LookupEnv("DOCKER_PAT")
-	if !ok {
-		app.ErrorLog.Fatal("DOCKER_PAT not set")
-	}
-	app.Config.Docker.Password = password
-
-	host, ok := os.LookupEnv("DOCKER_HOST")
-	if !ok {
-		app.Config.Docker.Host = "https://hub.docker.com"
-	} else {
-		app.Config.Docker.Host = host
-	}
-
-	dt := time.Now()
-	app.Config.DB.DateTime = dt.Format("2006-01-02_15-04-05")
-	app.Config.Context = context.Background()
 }

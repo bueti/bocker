@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"bocker.software-services.dev/pkg/bocker/db"
@@ -41,9 +42,21 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		app, err := app.Setup()
+		if err != nil {
+			app.ErrorLog.Fatal(err)
+		}
+
+		tmpDir, err := os.MkdirTemp("", "")
+		if err != nil {
+			app.ErrorLog.Fatal(err)
+		}
+		defer os.RemoveAll(tmpDir)
+		app.Config.TmpDir = tmpDir
+
 		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
-		err := docker.Pull(*app)
+		err = docker.Pull(*app)
 		if err != nil {
 			app.ErrorLog.Fatal(err.Error())
 		}
