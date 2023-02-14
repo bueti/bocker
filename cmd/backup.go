@@ -99,8 +99,12 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 func init() {
 	rootCmd.AddCommand(backupCmd)
 	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
+	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
+	backupCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
 	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("db-name")
 	backupCmd.MarkFlagRequired("db-user")
+	backupCmd.MarkFlagRequired("db-source")
 }
