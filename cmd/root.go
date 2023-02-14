@@ -31,17 +31,17 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var (
-	app = &config.Application{
-		ErrorLog: log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
-		InfoLog:  log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
-	}
-
+	app     = &config.Application{}
 	rootCmd = &cobra.Command{
 		Use:   "bocker",
 		Short: "Create Postgresql backups and store them in Docker images",
 		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub. 
-Of course, Bocker will also do the reverse and restore your database from a backup in Docker Hub.`,
+wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
+reverse and restore your database from a backup in Docker Hub.
+
+Expected environment variables:
+- DOCKER_USERNAME
+- DOCKER_PAT`,
 	}
 )
 
@@ -55,6 +55,9 @@ func Execute() {
 }
 
 func init() {
+	app.ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
 

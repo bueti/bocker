@@ -106,8 +106,8 @@ func init() {
 	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "db-owner", "o", "", "Database user ")
 	restoreCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
 	restoreCmd.Flags().StringVarP(&app.Config.DB.TargetName, "db-target", "t", "", "Target database name")
-	restoreCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
-	restoreCmd.Flags().StringVarP(&app.Config.Docker.Tag, "tag", "", "", "Tag of the image with the backup in it")
+	restoreCmd.Flags().StringVar(&app.Config.DB.Host, "db-host", "localhost", "Hostname of the database host")
+	restoreCmd.Flags().StringVar(&app.Config.Docker.Tag, "tag", "", "Tag of the image with the backup in it")
 	restoreCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
 	restoreCmd.Flags().BoolVar(&app.Config.DB.ImportRoles, "import-roles", false, "Create roles from backup")
 
