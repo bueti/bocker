@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"bocker.software-services.dev/pkg/bocker/config"
-	"bocker.software-services.dev/pkg/bocker/docker"
+	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/docker"
 )
 
 type Layer struct {

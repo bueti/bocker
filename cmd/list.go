@@ -22,7 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bocker.software-services.dev/pkg/bocker/backup"
+	"bocker.software-services.dev/pkg/backup"
 	"github.com/spf13/cobra"
 )
 

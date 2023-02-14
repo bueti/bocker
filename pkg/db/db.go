@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"bocker.software-services.dev/pkg/bocker/config"
+	"bocker.software-services.dev/pkg/config"
 )
 
 func Dump(app config.Application) error {

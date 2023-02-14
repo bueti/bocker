@@ -25,7 +25,7 @@ import (
 	"log"
 	"os"
 
-	"bocker.software-services.dev/pkg/bocker/config"
+	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
 )
 

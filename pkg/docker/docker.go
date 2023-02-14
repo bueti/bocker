@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"bocker.software-services.dev/pkg/bocker/config"
-	"bocker.software-services.dev/pkg/bocker/helpers"
+	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/helpers"
 	"github.com/docker/docker/api/types"
 )
 

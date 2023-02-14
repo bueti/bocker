@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"bocker.software-services.dev/pkg/bocker/config"
+	"bocker.software-services.dev/pkg/config"
 )
 
 type HTTPClient struct {

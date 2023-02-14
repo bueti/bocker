@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"os"
 
-	"bocker.software-services.dev/pkg/bocker/db"
-	"bocker.software-services.dev/pkg/bocker/docker"
+	"bocker.software-services.dev/pkg/db"
+	"bocker.software-services.dev/pkg/docker"
 	"github.com/spf13/cobra"
 )
 

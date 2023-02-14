@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"bocker.software-services.dev/pkg/bocker/config"
+	"bocker.software-services.dev/pkg/config"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
