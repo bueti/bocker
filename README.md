@@ -41,8 +41,12 @@ Use `-h` to get help for each subcommand:
 ```sh
 $ bocker --help
 Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub. 
-Of course, Bocker will also do the reverse and restore your database from a backup in Docker Hub.
+wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
+reverse and restore your database from a backup in Docker Hub.
+
+Expected environment variables:
+- DOCKER_USERNAME
+- DOCKER_PAT
 
 Usage:
   bocker [command]
@@ -54,12 +58,9 @@ Available Commands:
   restore     Restores a Posgres database
 
 Flags:
-  -c, --container-id string   ID of container running PostgreSQL
-      --db-host string        Hostname of the database host (default "localhost")
-  -s, --db-source string      Source database name
-  -h, --help                  help for bocker
-  -n, --namespace string      Docker Namespace (default "bueti")
-  -r, --repository string     Docker Repository
+  -h, --help                help for bocker
+  -n, --namespace string    Docker Namespace (default "bueti")
+  -r, --repository string   Docker Repository
 
 Use "bocker [command] --help" for more information about a command.
 ```
