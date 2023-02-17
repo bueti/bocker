@@ -3,7 +3,7 @@ module bocker.software-services.dev
 go 1.19
 
 require (
-	github.com/docker/docker v23.0.0+incompatible
+	github.com/docker/docker v23.0.1+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
 )
