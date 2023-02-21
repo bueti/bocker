@@ -45,10 +45,7 @@ Requires:
 Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
-		app, err := app.Setup()
-		if err != nil {
-			app.ErrorLog.Fatal(err)
-		}
+		app := app.Setup()
 
 		tmpDir, err := os.MkdirTemp("", "")
 		if err != nil {

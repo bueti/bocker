@@ -31,12 +31,9 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available backups",
 	Run: func(cmd *cobra.Command, args []string) {
-		app, err := app.Setup()
-		if err != nil {
-			app.ErrorLog.Fatal(err)
-		}
+		app := app.Setup()
 
-		err = backup.List(*app)
+		err := backup.List(*app)
 		if err != nil {
 			app.ErrorLog.Fatal(err)
 		}

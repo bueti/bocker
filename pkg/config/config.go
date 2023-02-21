@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -41,16 +40,16 @@ type Application struct {
 	InfoLog  *log.Logger
 }
 
-func (app Application) Setup() (*Application, error) {
+func (app Application) Setup() *Application {
 	username, ok := os.LookupEnv("DOCKER_USERNAME")
 	if !ok {
-		return &Application{}, fmt.Errorf("DOCKER_USERNAME not set")
+		log.Fatal("DOCKER_USERNAME not set")
 	}
 	app.Config.Docker.Username = username
 
 	password, ok := os.LookupEnv("DOCKER_PAT")
 	if !ok {
-		return &Application{}, fmt.Errorf("DOCKER_PAT not set")
+		log.Fatal("DOCKER_PAT not set")
 	}
 	app.Config.Docker.Password = password
 
@@ -65,5 +64,5 @@ func (app Application) Setup() (*Application, error) {
 	app.Config.DB.DateTime = dt.Format("2006-01-02_15-04-05")
 	app.Config.Context = context.Background()
 
-	return &app, nil
+	return &app
 }
