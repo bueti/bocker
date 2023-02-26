@@ -52,13 +52,13 @@ var restoreCmd = &cobra.Command{
 			app.ErroLog.Fatal(err.Error())
 		}
 
-		app.InfoLog.Print("Extracting backup from Docker image...")
+		app.InfoLog.Info("Extracting backup from Docker image...")
 		err = docker.Unpack(*app)
 		if err != nil {
 			app.ErroLog.Fatal(err)
 		}
 
-		app.InfoLog.Print("Creating database...")
+		app.InfoLog.Info("Creating database...")
 		err = db.CreateDB(*app)
 		if err != nil {
 			app.ErroLog.Fatal(err)
@@ -82,7 +82,7 @@ var restoreCmd = &cobra.Command{
 			}
 		}
 
-		app.InfoLog.Print("Restoring database...")
+		app.InfoLog.Info("Restoring database...")
 		err = db.Restore(*app)
 		if err != nil {
 			app.ErroLog.Fatal(err)

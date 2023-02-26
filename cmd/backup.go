@@ -57,14 +57,14 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 		app.Config.Docker.Tag = app.Config.DB.DateTime
 		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
-		app.InfoLog.Print("Creating backup...")
+		app.InfoLog.Info("Creating backup...")
 		err = db.Dump(*app)
 		if err != nil {
 			app.ErroLog.Fatal(err.Error())
 		}
 
 		if app.Config.DB.ExportRoles {
-			app.InfoLog.Print("Exporting roles...")
+			app.InfoLog.Info("Exporting roles...")
 			err := db.ExportRoles(*app)
 			if err != nil {
 				app.ErroLog.Fatal(err.Error())
@@ -78,13 +78,13 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 			}
 		}
 
-		app.InfoLog.Print("Building image...")
+		app.InfoLog.Info("Building image...")
 		err = docker.Build(*app)
 		if err != nil {
 			app.ErroLog.Fatal(err)
 		}
 
-		app.InfoLog.Print("Pushing image...")
+		app.InfoLog.Info("Pushing image...")
 		err = docker.Push(*app)
 		if err != nil {
 			app.ErroLog.Fatal(err)
