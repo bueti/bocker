@@ -34,6 +34,8 @@ To configure your username and password run:
 bocker config
 ```
 
+![bocker config](https://vhs.charm.sh/vhs-QLGa2GLyPLUaxnhl2uKyJ.gif)
+
 There are some assumptions made:
 
 - The host you are running `bocker` has Docker installed
