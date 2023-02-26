@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/config/tui"
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,7 +14,7 @@ import (
 )
 
 type model struct {
-	focusIndex int // which to-do list item our cursor is pointing at
+	focusIndex int
 	cursorMode cursor.Mode
 	inputs     []textinput.Model
 }
@@ -28,18 +29,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
-
-		// Change cursor mode
-		case "ctrl+r":
-			m.cursorMode++
-			if m.cursorMode > cursor.CursorHide {
-				m.cursorMode = cursor.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := range m.inputs {
-				cmds[i] = m.inputs[i].Cursor.SetMode(m.cursorMode)
-			}
-			return m, tea.Batch(cmds...)
 
 		// Set focus to next input
 		case "tab", "shift+tab", "enter", "up", "down":
@@ -108,7 +97,7 @@ func (m model) View() string {
 	output := termenv.NewOutput(os.Stdout)
 	s := output.String("\nPlease provide your Docker Username and PAT:\n\n").
 		Bold().
-		Foreground(Blue)
+		Foreground(tui.Blue)
 
 	b.WriteString(s.String())
 	for i := range m.inputs {
@@ -126,7 +115,6 @@ func (m model) View() string {
 
 	b.WriteString(helpStyle.Render("cursor mode is "))
 	b.WriteString(cursorModeHelpStyle.Render(m.cursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
 
 	return b.String()
 }

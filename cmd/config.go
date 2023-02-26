@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"os"
 
-	"bocker.software-services.dev/pkg/config/tui"
+	tui "bocker.software-services.dev/pkg/config/tui/setup"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )

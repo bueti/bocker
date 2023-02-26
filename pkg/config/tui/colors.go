@@ -7,5 +7,5 @@ import (
 )
 
 var (
-	Blue = termenv.NewOutput(os.Stdout).Color("#abcdef")
+	Blue = termenv.NewOutput(os.Stdout).Color("27")
 )
