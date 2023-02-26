@@ -4,8 +4,13 @@ import (
 	"context"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
+
+const cfgFile = "config.yaml"
 
 type config struct {
 	Docker struct {
@@ -40,6 +45,11 @@ type Application struct {
 	InfoLog  *log.Logger
 }
 
+type credentials struct {
+	Username string `yaml:"username,omitempty"`
+	Password string `yaml:"password,omitempty"`
+}
+
 func (app Application) Setup() *Application {
 	username, ok := os.LookupEnv("DOCKER_USERNAME")
 	if !ok {
@@ -65,4 +75,71 @@ func (app Application) Setup() *Application {
 	app.Config.Context = context.Background()
 
 	return &app
+}
+
+// Read the Docker username and password configuration stored on the disk
+func Read() (*credentials, error) {
+	var creds credentials
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	fullPath := filepath.Join(home, ".config", "bocker", cfgFile)
+
+	data, err := os.ReadFile(fullPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(data, &creds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &creds, nil
+}
+
+// Write the docker username and password to the disk
+func Write(username, password string) error {
+	creds, err := Read()
+	if err != nil {
+		return err
+	}
+	if username != "" {
+		creds.Username = username
+	}
+	if password != "" {
+		creds.Password = password
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	fullPath := filepath.Join(home, ".config", "bocker")
+	err = os.MkdirAll(fullPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(filepath.Join(fullPath, cfgFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+
+	data, err := yaml.Marshal(&creds)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.Write(data); err != nil {
+		f.Close() // ignore error; Write error takes precedence
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

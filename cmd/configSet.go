@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -29,36 +30,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
-var (
-	app     = &config.Application{}
-	rootCmd = &cobra.Command{
-		Use:   "bocker",
-		Short: "Create Postgresql backups and store them in Docker images",
-		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
-reverse and restore your database from a backup in Docker Hub.
+var configSetCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Set Registry Configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		if username == "" && password == "" {
+			fmt.Printf("\nEither username or password has to be set\n\n")
+			configCmd.Help()
+			os.Exit(1)
+		}
 
-Expected environment variables:
-- DOCKER_USERNAME
-- DOCKER_PAT`,
-	}
-)
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+		err := config.Write(username, password)
+		if err != nil {
+			log.Fatal(err)
+		}
+	},
 }
 
 func init() {
-	app.ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-
-	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
-	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
-
+	configCmd.AddCommand(configSetCmd)
+	configSetCmd.Flags().StringVarP(&username, "username", "u", "", "Docker Hub Username")
+	configSetCmd.Flags().StringVarP(&password, "password", "p", "", "Docker Hub Password")
 }

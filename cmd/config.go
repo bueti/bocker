@@ -22,26 +22,26 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bocker.software-services.dev/pkg/backup"
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List available backups",
+var (
+	username, password string
+)
+
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Write Registry Configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		app := app.Setup()
-
-		err := backup.List(*app)
-		if err != nil {
-			app.ErrorLog.Fatal(err)
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(0)
 		}
-
 	},
 }
 
 func init() {
-	backupCmd.AddCommand(listCmd)
-	rootCmd.MarkPersistentFlagRequired("repository")
+	rootCmd.AddCommand(configCmd)
 }
