@@ -2,4 +2,5 @@
 .envrc
 .DS_Store
 .vscode/
+.idea/
 vhs/gifs

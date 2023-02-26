@@ -40,7 +40,7 @@ var configCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
 			if _, err := tea.NewProgram(tui.InitialModel()).Run(); err != nil {
-				fmt.Printf("could not start program: %s\n", err)
+				fmt.Printf("could not start bocker: %s\n", err)
 				os.Exit(1)
 			}
 		}
