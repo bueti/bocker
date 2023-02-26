@@ -2,10 +2,16 @@ package config
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
+
+const cfgFile = "config.yaml"
 
 type config struct {
 	Docker struct {
@@ -40,18 +46,25 @@ type Application struct {
 	InfoLog  *log.Logger
 }
 
-func (app Application) Setup() *Application {
-	username, ok := os.LookupEnv("DOCKER_USERNAME")
-	if !ok {
-		log.Fatal("DOCKER_USERNAME not set")
-	}
-	app.Config.Docker.Username = username
+type Credentials struct {
+	Username string `yaml:"username,omitempty"`
+	Password string `yaml:"password,omitempty"`
+}
 
-	password, ok := os.LookupEnv("DOCKER_PAT")
-	if !ok {
-		log.Fatal("DOCKER_PAT not set")
+func (app Application) Setup() *Application {
+	creds, err := Read()
+	if err != nil {
+		log.Fatalf("Can't read configuration: %s\nTry running `bocker config` to fix the issue.", err)
 	}
-	app.Config.Docker.Password = password
+
+	if creds.Username == "" {
+		log.Fatal("Username not set. Run `bocker config` first.")
+	}
+	app.Config.Docker.Username = creds.Username
+	if creds.Password == "" {
+		log.Fatal("Password not set. Run `bocker config` first.")
+	}
+	app.Config.Docker.Password = creds.Password
 
 	host, ok := os.LookupEnv("DOCKER_HOST")
 	if !ok {
@@ -65,4 +78,74 @@ func (app Application) Setup() *Application {
 	app.Config.Context = context.Background()
 
 	return &app
+}
+
+// Read the Docker username and password configuration stored on the disk
+func Read() (*Credentials, error) {
+	var creds Credentials
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	fullPath := filepath.Join(home, ".config", "bocker", cfgFile)
+
+	data, err := os.ReadFile(fullPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return &Credentials{}, nil
+		}
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(data, &creds)
+	if err != nil {
+		return nil, err
+	}
+
+	return &creds, nil
+}
+
+// Write the docker username and password to the disk
+func Write(username, password string) error {
+	creds, err := Read()
+	if err != nil {
+		return err
+	}
+	if username != "" {
+		creds.Username = username
+	}
+	if password != "" {
+		creds.Password = password
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	fullPath := filepath.Join(home, ".config", "bocker")
+	err = os.MkdirAll(fullPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(filepath.Join(fullPath, cfgFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+
+	data, err := yaml.Marshal(&creds)
+	if err != nil {
+		return err
+	}
+
+	if _, err := f.Write(data); err != nil {
+		f.Close() // ignore error; Write error takes precedence
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

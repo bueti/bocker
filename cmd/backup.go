@@ -104,4 +104,5 @@ func init() {
 	backupCmd.MarkFlagRequired("db-name")
 	backupCmd.MarkFlagRequired("db-user")
 	backupCmd.MarkFlagRequired("db-source")
+	rootCmd.MarkPersistentFlagRequired("repository")
 }

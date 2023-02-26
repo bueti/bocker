@@ -22,39 +22,31 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"log"
+	"fmt"
 	"os"
 
-	"bocker.software-services.dev/pkg/config"
+	tui "bocker.software-services.dev/pkg/config/tui/setup"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var (
-	app     = &config.Application{}
-	rootCmd = &cobra.Command{
-		Use:   "bocker",
-		Short: "Create Postgresql backups and store them in Docker images",
-		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
-reverse and restore your database from a backup in Docker Hub.`,
-	}
+	username, password string
 )
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "Write Registry Configuration",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			if _, err := tea.NewProgram(tui.InitialModel()).Run(); err != nil {
+				fmt.Printf("could not start program: %s\n", err)
+				os.Exit(1)
+			}
+		}
+	},
 }
 
 func init() {
-	app.ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-
-	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
-	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
-
+	rootCmd.AddCommand(configCmd)
 }

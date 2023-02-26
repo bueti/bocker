@@ -43,4 +43,5 @@ var listCmd = &cobra.Command{
 
 func init() {
 	backupCmd.AddCommand(listCmd)
+	rootCmd.MarkPersistentFlagRequired("repository")
 }

@@ -29,12 +29,16 @@ Download the appropriate file from the [Releases](https://github.com/bueti/bocke
 
 ## Usage
 
+To configure your username and password run:
+```sh
+bocker config
+```
+
 There are some assumptions made:
 
 - The host you are running `bocker` has Docker installed
 - `docker login` was run successfully and you must have permission to push images
-- The environment variables `DOCKER_USERNAME` and `DOCKER_PAT` must be set
-- The Personal Access Token requires the following permissions: `Read, Write, Delete`
+- You need a Docker Hub Personal Access Token which requires the following permissions: `Read, Write, Delete`
 
 Use `-h` to get help for each subcommand:
 
@@ -43,10 +47,6 @@ $ bocker --help
 Bocker is a command line tool which creates a backup from a PostgreSQL database, 
 wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
 reverse and restore your database from a backup in Docker Hub.
-
-Expected environment variables:
-- DOCKER_USERNAME
-- DOCKER_PAT
 
 Usage:
   bocker [command]
