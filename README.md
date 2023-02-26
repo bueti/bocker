@@ -29,6 +29,8 @@ Download the appropriate file from the [Releases](https://github.com/bueti/bocke
 
 ## Usage
 
+### Configuration
+
 To configure your username and password run:
 ```sh
 bocker config
@@ -36,6 +38,17 @@ bocker config
 
 ![bocker config](https://vhs.charm.sh/vhs-QLGa2GLyPLUaxnhl2uKyJ.gif)
 
+### List existing backups
+
+To list existing backups you need to tell bocker for which namespace and repository you want to list tags:
+
+```sh
+bocker backup list -n <namespace> -r <repository>
+```
+
+![bocker backup list](https://vhs.charm.sh/vhs-3LVSVJ42TqACEBIIGcRR4g.gif)
+
+### More
 There are some assumptions made:
 
 - The host you are running `bocker` has Docker installed
