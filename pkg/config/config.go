@@ -45,7 +45,7 @@ type Application struct {
 	InfoLog  *log.Logger
 }
 
-type credentials struct {
+type Credentials struct {
 	Username string `yaml:"username,omitempty"`
 	Password string `yaml:"password,omitempty"`
 }
@@ -78,8 +78,8 @@ func (app Application) Setup() *Application {
 }
 
 // Read the Docker username and password configuration stored on the disk
-func Read() (*credentials, error) {
-	var creds credentials
+func Read() (*Credentials, error) {
+	var creds Credentials
 
 	home, err := os.UserHomeDir()
 	if err != nil {
