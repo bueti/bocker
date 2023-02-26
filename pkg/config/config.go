@@ -3,11 +3,11 @@ package config
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,9 +41,9 @@ type config struct {
 }
 
 type Application struct {
-	Config   config
-	ErrorLog *log.Logger
-	InfoLog  *log.Logger
+	Config  config
+	InfoLog log.Logger
+	ErroLog log.Logger
 }
 
 type Credentials struct {
@@ -54,7 +54,7 @@ type Credentials struct {
 func (app Application) Setup() *Application {
 	creds, err := Read()
 	if err != nil {
-		log.Fatalf("Can't read configuration: %s\nTry running `bocker config` to fix the issue.", err)
+		log.Fatal("Can't read configuration. Try running `bocker config` to fix the issue.", "err", err)
 	}
 
 	if creds.Username == "" {

@@ -40,7 +40,7 @@ var restoreCmd = &cobra.Command{
 
 		tmpDir, err := os.MkdirTemp("", "")
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 		defer os.RemoveAll(tmpDir)
 		app.Config.TmpDir = tmpDir
@@ -49,26 +49,26 @@ var restoreCmd = &cobra.Command{
 
 		err = docker.Pull(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err.Error())
+			app.ErroLog.Fatal(err.Error())
 		}
 
-		app.InfoLog.Println("Extracting backup from Docker image...")
+		app.InfoLog.Print("Extracting backup from Docker image...")
 		err = docker.Unpack(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 
-		app.InfoLog.Println("Creating database...")
+		app.InfoLog.Print("Creating database...")
 		err = db.CreateDB(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 
 		backupFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag))
 		if app.Config.Docker.ContainerID != "" {
 			err = docker.CopyTo(app.Config.Docker.ContainerID, backupFile)
 			if err != nil {
-				app.ErrorLog.Fatal(err)
+				app.ErroLog.Fatal(err)
 			}
 		}
 
@@ -77,15 +77,15 @@ var restoreCmd = &cobra.Command{
 			if app.Config.Docker.ContainerID != "" {
 				err = docker.CopyTo(app.Config.Docker.ContainerID, rolesFile)
 				if err != nil {
-					app.ErrorLog.Fatal(err)
+					app.ErroLog.Fatal(err)
 				}
 			}
 		}
 
-		app.InfoLog.Println("Restoring database...")
+		app.InfoLog.Print("Restoring database...")
 		err = db.Restore(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 		fmt.Println("Database successfully restored.")
 	},

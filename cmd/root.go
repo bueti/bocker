@@ -22,8 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"log"
 	"os"
+	"time"
+
+	"github.com/charmbracelet/log"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
@@ -51,8 +53,8 @@ func Execute() {
 }
 
 func init() {
-	app.ErrorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	app.InfoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app.InfoLog = log.New(log.WithLevel(log.InfoLevel), log.WithTimestamp(), log.WithTimeFormat(time.Kitchen), log.WithTimeFormat(time.Kitchen))
+	app.ErroLog = log.New(log.WithLevel(log.ErrorLevel), log.WithTimestamp(), log.WithTimeFormat(time.Kitchen), log.WithTimeFormat(time.Kitchen))
 
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")

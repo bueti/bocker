@@ -58,7 +58,7 @@ func (c *APIClient) ParseOutput(app config.Application, out io.ReadCloser) error
 	}
 
 	for _, v := range stati {
-		app.InfoLog.Println(v.Status)
+		app.InfoLog.Print(v.Status)
 	}
 	return nil
 }

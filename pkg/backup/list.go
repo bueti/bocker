@@ -63,7 +63,7 @@ type ListTagsResponse struct {
 func List(app config.Application) error {
 	c, err := docker.NewHTTPClient(app)
 	if err != nil {
-		app.ErrorLog.Fatal(err)
+		app.ErroLog.Fatal(err)
 	}
 
 	path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", app.Config.Docker.Namespace, app.Config.Docker.Repository)
@@ -109,7 +109,7 @@ func List(app config.Application) error {
 		}
 
 	} else {
-		app.ErrorLog.Println(resp.StatusCode)
+		app.ErroLog.Print(resp.StatusCode)
 	}
 
 	return nil

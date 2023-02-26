@@ -198,7 +198,7 @@ func Unpack(app config.Application) error {
 	manifestFile := "manifest.json"
 	err = helpers.Untar(outputFilePath, manifestFile, app.Config.TmpDir)
 	if err != nil {
-		app.ErrorLog.Fatalf("Couldn't unpack %s", manifestFile)
+		app.ErroLog.Fatal("Couldn't unpack file", "file", manifestFile, "err", err)
 	}
 
 	// read manifest.json and extract layer with backup in it

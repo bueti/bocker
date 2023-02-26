@@ -128,7 +128,7 @@ func CreateDB(app config.Application) error {
 	err = psqlCmd.Run()
 	if err != nil {
 		if strings.Contains(errb.String(), "already exists") {
-			app.InfoLog.Println("Database already exists, skipping creation...")
+			app.InfoLog.Print("Database already exists, skipping creation...")
 		} else {
 			return fmt.Errorf(errb.String())
 		}
@@ -180,7 +180,7 @@ func Restore(app config.Application) error {
 	err = pgRestoreCmd.Run()
 	if err != nil {
 		if strings.Contains(errb.String(), "errors ignored on restore") {
-			app.InfoLog.Println("Some errors during restore where ignored.")
+			app.InfoLog.Print("Some errors during restore where ignored.")
 		} else {
 			return fmt.Errorf(errb.String())
 		}

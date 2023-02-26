@@ -35,7 +35,7 @@ var listCmd = &cobra.Command{
 
 		err := backup.List(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 
 	},

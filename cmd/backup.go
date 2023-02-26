@@ -49,7 +49,7 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 
 		tmpDir, err := os.MkdirTemp("", "")
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 		defer os.RemoveAll(tmpDir)
 		app.Config.TmpDir = tmpDir
@@ -57,37 +57,37 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 		app.Config.Docker.Tag = app.Config.DB.DateTime
 		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
-		app.InfoLog.Println("Creating backup...")
+		app.InfoLog.Print("Creating backup...")
 		err = db.Dump(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err.Error())
+			app.ErroLog.Fatal(err.Error())
 		}
 
 		if app.Config.DB.ExportRoles {
-			app.InfoLog.Println("Exporting roles...")
+			app.InfoLog.Print("Exporting roles...")
 			err := db.ExportRoles(*app)
 			if err != nil {
-				app.ErrorLog.Fatal(err.Error())
+				app.ErroLog.Fatal(err.Error())
 			}
 		}
 
 		if app.Config.Docker.ContainerID != "" {
 			err := docker.CopyFrom(*app)
 			if err != nil {
-				app.ErrorLog.Fatal(err)
+				app.ErroLog.Fatal(err)
 			}
 		}
 
-		app.InfoLog.Println("Building image...")
+		app.InfoLog.Print("Building image...")
 		err = docker.Build(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 
-		app.InfoLog.Println("Pushing image...")
+		app.InfoLog.Print("Pushing image...")
 		err = docker.Push(*app)
 		if err != nil {
-			app.ErrorLog.Fatal(err)
+			app.ErroLog.Fatal(err)
 		}
 		fmt.Printf("Published image %s\n", app.Config.Docker.ImagePath)
 	},
