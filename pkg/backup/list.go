@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/docker"
@@ -92,7 +93,7 @@ func List(app config.Application) error {
 		columns := []table.Column{
 			{Title: "ID", Width: 10},
 			{Title: "Name", Width: 20},
-			{Title: "Last Updated", Width: 30},
+			{Title: "Last Updated", Width: 25},
 			{Title: "Size", Width: 10},
 		}
 
@@ -101,7 +102,14 @@ func List(app config.Application) error {
 		for _, v := range tags.Results {
 			size := float64(v.FullSize) / (1 << 20)
 			sizeStr := fmt.Sprintf("%.2f MiB", size)
-			rows = append(rows, []string{strconv.Itoa(v.ID), v.Name, v.LastUpdated, sizeStr})
+
+			dateTime, err := time.Parse(time.RFC3339, v.LastUpdated)
+
+			if err != nil {
+				return fmt.Errorf("cannot parse timestamp: %v", err)
+			}
+
+			rows = append(rows, []string{strconv.Itoa(v.ID), v.Name, dateTime.Format("02 Jan 2006 15:04 MST"), sizeStr})
 		}
 
 		t := table.New(
