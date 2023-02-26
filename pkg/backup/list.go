@@ -92,7 +92,7 @@ func List(app config.Application) error {
 
 		columns := []table.Column{
 			{Title: "ID", Width: 10},
-			{Title: "Name", Width: 20},
+			{Title: "Tag", Width: 20},
 			{Title: "Last Updated", Width: 25},
 			{Title: "Size", Width: 10},
 		}
