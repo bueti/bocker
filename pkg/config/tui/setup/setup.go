@@ -28,7 +28,7 @@ func InitialModel() model {
 	for i := range m.inputs {
 		t = textinput.New()
 		t.CursorStyle = cursorStyle
-		t.CharLimit = 32
+		t.CharLimit = 255
 
 		switch i {
 		case 0:

@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,17 +52,19 @@ type Credentials struct {
 }
 
 func (app Application) Setup() *Application {
-	username, ok := os.LookupEnv("DOCKER_USERNAME")
-	if !ok {
-		log.Fatal("DOCKER_USERNAME not set")
+	creds, err := Read()
+	if err != nil {
+		log.Fatalf("Can't read configuration: %s\nTry running `bocker config` to fix the issue.", err)
 	}
-	app.Config.Docker.Username = username
 
-	password, ok := os.LookupEnv("DOCKER_PAT")
-	if !ok {
-		log.Fatal("DOCKER_PAT not set")
+	if creds.Username == "" {
+		log.Fatal("Username not set. Run `bocker config` first.")
 	}
-	app.Config.Docker.Password = password
+	app.Config.Docker.Username = creds.Username
+	if creds.Password == "" {
+		log.Fatal("Password not set. Run `bocker config` first.")
+	}
+	app.Config.Docker.Password = creds.Password
 
 	host, ok := os.LookupEnv("DOCKER_HOST")
 	if !ok {
@@ -89,6 +92,9 @@ func Read() (*Credentials, error) {
 
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return &Credentials{}, nil
+		}
 		return nil, err
 	}
 

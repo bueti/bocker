@@ -37,11 +37,7 @@ var (
 		Short: "Create Postgresql backups and store them in Docker images",
 		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
 wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
-reverse and restore your database from a backup in Docker Hub.
-
-Expected environment variables:
-- DOCKER_USERNAME
-- DOCKER_PAT`,
+reverse and restore your database from a backup in Docker Hub.`,
 	}
 )
 
