@@ -2,12 +2,14 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/muesli/termenv"
 )
 
 type model struct {
@@ -103,6 +105,12 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 func (m model) View() string {
 	var b strings.Builder
 
+	output := termenv.NewOutput(os.Stdout)
+	s := output.String("\nPlease provide your Docker Username and PAT:\n\n").
+		Bold().
+		Foreground(Blue)
+
+	b.WriteString(s.String())
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
 		if i < len(m.inputs)-1 {
