@@ -7,7 +7,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.6.0
 	github.com/charmbracelet/log v0.1.1
 	github.com/docker/docker v23.0.1+incompatible
-	github.com/muesli/termenv v0.13.0
+	github.com/muesli/termenv v0.14.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -15,7 +15,7 @@ require (
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
-	github.com/aymanbagabas/go-osc52 v1.0.3 // indirect
+	github.com/aymanbagabas/go-osc52 v1.2.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
