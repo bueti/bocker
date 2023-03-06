@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/charmbracelet/bubbletea v0.23.2
 	github.com/charmbracelet/lipgloss v0.6.0
-	github.com/charmbracelet/log v0.1.1
+	github.com/charmbracelet/log v0.1.2
 	github.com/docker/docker v23.0.1+incompatible
 	github.com/muesli/termenv v0.14.0
 	github.com/pkg/errors v0.9.1
