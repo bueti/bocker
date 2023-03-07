@@ -10,7 +10,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X cmd.Version={{.Version}} -X cmd.Commit={{.Commit}} -X cmd.Date={{.Date}}
+      - -s -w -X bocker.software-services.dev/cmd.version={{.Version}} -X bocker.software-services.dev/cmd.commit={{.Commit}} -X bocker.software-services.dev/cmd.date={{.Date}}
 
 release:
   prerelease: auto

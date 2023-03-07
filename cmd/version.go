@@ -29,16 +29,16 @@ import (
 )
 
 var (
-	Version = "dev"
-	Commit  = "none"
-	Date    = "unknown"
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Display the version of bocker",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Bocker %s, commit %s, built at %s\n", Version, Commit, Date)
+		fmt.Printf("Bocker %s, commit %s, built at %s\n", version, commit, date)
 	},
 }
 
