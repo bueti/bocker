@@ -53,8 +53,18 @@ func Execute() {
 }
 
 func init() {
-	app.InfoLog = log.New(log.WithLevel(log.InfoLevel), log.WithTimestamp(), log.WithTimeFormat(time.Kitchen), log.WithTimeFormat(time.Kitchen))
-	app.ErroLog = log.New(log.WithLevel(log.ErrorLevel), log.WithTimestamp(), log.WithTimeFormat(time.Kitchen), log.WithTimeFormat(time.Kitchen))
+	app.InfoLog = *log.NewWithOptions(os.Stdout, log.Options{
+		ReportCaller:    true,
+		ReportTimestamp: true,
+		TimeFormat:      time.Kitchen,
+		Level:           log.InfoLevel,
+	})
+	app.ErroLog = *log.NewWithOptions(os.Stderr, log.Options{
+		ReportCaller:    true,
+		ReportTimestamp: true,
+		TimeFormat:      time.Kitchen,
+		Level:           log.ErrorLevel,
+	})
 
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
