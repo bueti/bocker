@@ -9,7 +9,7 @@ require (
 	github.com/docker/docker v23.0.3+incompatible
 	github.com/muesli/termenv v0.15.1
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
