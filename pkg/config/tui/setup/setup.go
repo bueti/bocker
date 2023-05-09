@@ -19,8 +19,8 @@ var (
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Save"))
 )
 
-func InitialModel() model {
-	m := model{
+func InitialModel() Model {
+	m := Model{
 		inputs: make([]textinput.Model, 2),
 	}
 

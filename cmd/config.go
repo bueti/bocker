@@ -22,12 +22,6 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
-	"os"
-
-	"bocker.software-services.dev/pkg/config"
-	tui "bocker.software-services.dev/pkg/config/tui/setup"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -38,19 +32,6 @@ var (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Write Registry Configuration",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			// if config exists, show config, else  start tui
-			cfg, err := config.Read()
-			if err != nil {
-				if _, err := tea.NewProgram(tui.InitialModel()).Run(); err != nil {
-					fmt.Printf("could not start bocker: %s\n", err)
-					os.Exit(1)
-				}
-			}
-			fmt.Printf("Username: %s\nPassord: %s", cfg.Username, cfg.Password)
-		}
-	},
 }
 
 func init() {

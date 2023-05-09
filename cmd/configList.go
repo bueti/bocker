@@ -33,17 +33,21 @@ var configListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List Registry Configuration",
 	Run: func(cmd *cobra.Command, args []string) {
-		config, err := config.Read()
+		cfg, err := config.GetUsername()
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("Username: %s\nPassword: %s\n", config.Username, config.Password)
+		password, err := config.GetKey(config.AppName)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("Username: %s\nPassword: %s\n", cfg.Username, password)
 
 	},
 }
 
 func init() {
 	configCmd.AddCommand(configListCmd)
-
 }
