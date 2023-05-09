@@ -8,14 +8,15 @@ import (
 )
 
 var (
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("45"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle.Copy()
-	noStyle             = lipgloss.NewStyle()
-	helpStyle           = blurredStyle.Copy()
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	focusedColor = lipgloss.AdaptiveColor{Light: "236", Dark: "248"}
+	blurredColor = lipgloss.AdaptiveColor{Light: "238", Dark: "246"}
 
-	focusedButton = focusedStyle.Copy().Render("[ Save ]")
+	focusedStyle = lipgloss.NewStyle().Foreground(focusedColor)
+	blurredStyle = lipgloss.NewStyle().Foreground(blurredColor)
+	cursorStyle  = focusedStyle.Copy()
+	noStyle      = lipgloss.NewStyle()
+
+	focusedButton = focusedStyle.Copy().Bold(true).Render("[ Save ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Save"))
 )
 
@@ -25,17 +26,18 @@ func InitialModel() Model {
 	}
 
 	var t textinput.Model
+
 	for i := range m.inputs {
 		t = textinput.New()
 		t.CursorStyle = cursorStyle
 		t.CharLimit = 255
+		t.Prompt = ""
 
 		switch i {
 		case 0:
 			t.Placeholder = "Username"
-			t.Focus()
-			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
+			t.Focus()
 		case 1:
 			t.Placeholder = "Password"
 			t.EchoMode = textinput.EchoPassword

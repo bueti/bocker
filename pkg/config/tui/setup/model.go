@@ -2,14 +2,12 @@ package tui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
-	"bocker.software-services.dev/pkg/config/tui"
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/muesli/termenv"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Model struct {
@@ -19,6 +17,8 @@ type Model struct {
 	Username   string
 	Password   string
 	Done       bool
+	width      int
+	height     int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -27,6 +27,10 @@ func (m Model) Init() tea.Cmd {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
@@ -96,16 +100,24 @@ func (m *Model) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m Model) View() string {
+	if m.width == 0 {
+		return "loading..."
+	}
+
+	boderColor := lipgloss.AdaptiveColor{Light: "22", Dark: "42"}
+	style := lipgloss.NewStyle().
+		BorderForeground(boderColor).
+		BorderStyle(lipgloss.NormalBorder()).
+		Width(80).
+		BorderBottom(true)
+
+	title := "\nPlease provide your Docker Username and PAT:\n"
+	titleStyle := lipgloss.NewStyle().Foreground(boderColor).Bold(true)
+	s := titleStyle.Render(title)
+
 	var b strings.Builder
-
-	output := termenv.NewOutput(os.Stdout)
-	s := output.String("\nPlease provide your Docker Username and PAT:\n\n").
-		Bold().
-		Foreground(tui.Blue)
-
-	b.WriteString(s.String())
 	for i := range m.inputs {
-		b.WriteString(m.inputs[i].View())
+		b.WriteString(style.Render(m.inputs[i].View()))
 		if i < len(m.inputs)-1 {
 			b.WriteRune('\n')
 		}
@@ -117,5 +129,16 @@ func (m Model) View() string {
 	}
 	fmt.Fprintf(&b, "\n\n%s\n\n", *button)
 
-	return b.String()
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Left,
+		lipgloss.JoinVertical(
+			lipgloss.Left,
+			s,
+			b.String(),
+		),
+	)
+
 }
