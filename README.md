@@ -36,7 +36,7 @@ To configure your username and password run:
 bocker config
 ```
 
-![bocker config](https://vhs.charm.sh/vhs-QLGa2GLyPLUaxnhl2uKyJ.gif)
+![bocker config](https://vhs.charm.sh/vhs-6w65TVtSWeJqk5oGv5N9cp.gif)
 
 ### List existing backups
 
