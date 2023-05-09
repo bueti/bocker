@@ -27,8 +27,6 @@ import (
 	"os"
 
 	"bocker.software-services.dev/pkg/config"
-	tui "bocker.software-services.dev/pkg/config/tui/setup"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -37,12 +35,18 @@ var configSetCmd = &cobra.Command{
 	Short: "Set Registry Configuration",
 	Run: func(cmd *cobra.Command, args []string) {
 		if username == "" || password == "" {
-			if _, err := tea.NewProgram(tui.InitialModel()).Run(); err != nil {
+			err := config.ConfigTui()
+			if err != nil {
 				fmt.Printf("could not start bocker: %s\n", err)
 				os.Exit(1)
 			}
 		} else {
-			err := config.Write(username, password)
+			err := config.SetUsername(username)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			err = config.SetKey(config.AppName, password)
 			if err != nil {
 				log.Fatal(err)
 			}

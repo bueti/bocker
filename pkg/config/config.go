@@ -7,10 +7,14 @@ import (
 	"path/filepath"
 	"time"
 
+	tui "bocker.software-services.dev/pkg/config/tui/setup"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
+	"github.com/zalando/go-keyring"
 	"gopkg.in/yaml.v3"
 )
 
+const AppName = "bocker"
 const cfgFile = "config.yaml"
 
 type config struct {
@@ -46,25 +50,25 @@ type Application struct {
 	ErroLog log.Logger
 }
 
-type Credentials struct {
+type Username struct {
 	Username string `yaml:"username,omitempty"`
-	Password string `yaml:"password,omitempty"`
 }
 
 func (app Application) Setup() *Application {
-	creds, err := Read()
+	cfg, err := GetUsername()
 	if err != nil {
 		log.Fatal("Can't read configuration. Try running `bocker config` to fix the issue.", "err", err)
 	}
 
-	if creds.Username == "" {
+	if cfg.Username == "" {
 		log.Fatal("Username not set. Run `bocker config` first.")
 	}
-	app.Config.Docker.Username = creds.Username
-	if creds.Password == "" {
-		log.Fatal("Password not set. Run `bocker config` first.")
+	app.Config.Docker.Username = cfg.Username
+
+	app.Config.Docker.Password, err = GetKey(AppName)
+	if err != nil {
+		os.Exit(1)
 	}
-	app.Config.Docker.Password = creds.Password
 
 	host, ok := os.LookupEnv("DOCKER_HOST")
 	if !ok {
@@ -80,9 +84,32 @@ func (app Application) Setup() *Application {
 	return &app
 }
 
-// Read the Docker username and password configuration stored on the disk
-func Read() (*Credentials, error) {
-	var creds Credentials
+// SetKey creates a new entry in the OS keyring
+func SetKey(service, secret string) error {
+	err := keyring.Set(service, AppName, secret)
+	if err != nil {
+		log.Error("failed to fetch secret", "err", err)
+		return err
+	}
+
+	return nil
+}
+
+// GetKey retrieves a key from the OS keyring
+func GetKey(service string) (string, error) {
+	// get password
+	secret, err := keyring.Get(service, AppName)
+	if err != nil {
+		log.Error("failed to fetch key", "err", err)
+		return "", err
+	}
+
+	return secret, nil
+}
+
+// GetUsername from configuration stored on the disk
+func GetUsername() (*Username, error) {
+	var username Username
 
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -93,30 +120,27 @@ func Read() (*Credentials, error) {
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return &Credentials{}, nil
+			return &Username{}, nil
 		}
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(data, &creds)
+	err = yaml.Unmarshal(data, &username)
 	if err != nil {
 		return nil, err
 	}
 
-	return &creds, nil
+	return &username, nil
 }
 
-// Write the docker username and password to the disk
-func Write(username, password string) error {
-	creds, err := Read()
+// SetUsername writes the docker username to the disk
+func SetUsername(username string) error {
+	creds, err := GetUsername()
 	if err != nil {
 		return err
 	}
 	if username != "" {
 		creds.Username = username
-	}
-	if password != "" {
-		creds.Password = password
 	}
 
 	home, err := os.UserHomeDir()
@@ -140,7 +164,7 @@ func Write(username, password string) error {
 	}
 
 	if _, err := f.Write(data); err != nil {
-		f.Close() // ignore error; Write error takes precedence
+		f.Close() // ignore error; SetUsername error takes precedence
 		return err
 	}
 	if err := f.Close(); err != nil {
@@ -148,4 +172,27 @@ func Write(username, password string) error {
 	}
 
 	return nil
+}
+
+// ConfigTui starts the Bubbletea Configuration TUI
+func ConfigTui() error {
+	finalModel, err := tea.NewProgram(tui.InitialModel()).Run()
+	if err != nil {
+		return err
+	}
+
+	ans := finalModel.(tui.Model)
+
+	if !ans.Done {
+		return nil
+	}
+
+	SetKey(AppName, ans.Password)
+	err = SetUsername(ans.Username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

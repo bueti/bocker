@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/config/tui"
 	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -13,17 +12,20 @@ import (
 	"github.com/muesli/termenv"
 )
 
-type model struct {
+type Model struct {
 	focusIndex int
 	cursorMode cursor.Mode
 	inputs     []textinput.Model
+	Username   string
+	Password   string
+	Done       bool
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -35,9 +37,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s := msg.String()
 
 			// Did the user press enter while the submit button was focused?
-			// If so, exit.
+			// If so, store values provided
 			if s == "enter" && m.focusIndex == len(m.inputs) {
-				config.Write(m.inputs[0].Value(), m.inputs[1].Value())
+				m.Username = m.inputs[0].Value()
+				m.Password = m.inputs[1].Value()
+				m.Done = true
 				return m, tea.Quit
 			}
 
@@ -79,7 +83,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
+func (m *Model) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.inputs))
 
 	// Only text inputs with Focus() set will respond, so it's safe to simply
@@ -91,7 +95,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	var b strings.Builder
 
 	output := termenv.NewOutput(os.Stdout)
