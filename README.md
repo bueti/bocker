@@ -9,7 +9,7 @@ BockeR is a command line tool which creates a backup from a PostgreSQL database,
 Is it a good idea? Probably not, but it solved a problem I had!
 
 > **Warning**  
-> Do **not** push the image to a publich repository, or everybody in the world will have access to your database backup!
+> Do **not** push the image to a public repository, or everybody in the world will have access to your database backup!
 
 ## Installation
 
@@ -33,7 +33,7 @@ Download the appropriate file from the [Releases](https://github.com/bueti/bocke
 
 To configure your username and password run:
 ```sh
-bocker config
+bocker config set
 ```
 
 ![bocker config](https://vhs.charm.sh/vhs-6w65TVtSWeJqk5oGv5N9cp.gif)
