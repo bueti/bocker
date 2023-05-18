@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -31,7 +32,7 @@ func Dump(app config.Application) error {
 		if err == nil {
 			pgDumpBin, _ = filepath.Abs(pgDumpBin)
 		} else {
-			return fmt.Errorf("docker not found")
+			return errors.New("docker not found")
 		}
 		pgDumpArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_dump"}, pgDumpArgs...)
 	} else {
@@ -39,7 +40,7 @@ func Dump(app config.Application) error {
 		if err == nil {
 			pgDumpBin, _ = filepath.Abs(pgDumpBin)
 		} else {
-			return fmt.Errorf("pg_dump not found")
+			return err
 		}
 	}
 
@@ -48,7 +49,7 @@ func Dump(app config.Application) error {
 	bkpCmd.Stderr = &errb
 	err = bkpCmd.Run()
 	if err != nil {
-		return fmt.Errorf(errb.String())
+		return errors.New(errb.String())
 	}
 	return nil
 }
@@ -75,7 +76,7 @@ func ExportRoles(app config.Application) error {
 		if err == nil {
 			pgDumpallBin, _ = filepath.Abs(pgDumpallBin)
 		} else {
-			return fmt.Errorf("docker not found")
+			return errors.New("docker not found")
 		}
 		pgDumpallArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_dumpall"}, pgDumpallArgs...)
 	} else {
@@ -83,7 +84,7 @@ func ExportRoles(app config.Application) error {
 		if err == nil {
 			pgDumpallBin, _ = filepath.Abs(pgDumpallBin)
 		} else {
-			return fmt.Errorf("pg_dumpall not found")
+			return errors.New("pg_dumpall not found")
 		}
 	}
 
@@ -92,7 +93,7 @@ func ExportRoles(app config.Application) error {
 	bkpCmd.Stderr = &errb
 	err = bkpCmd.Run()
 	if err != nil {
-		return fmt.Errorf(errb.String())
+		return errors.New(errb.String())
 	}
 	return nil
 }
@@ -110,7 +111,7 @@ func CreateDB(app config.Application) error {
 		if err == nil {
 			pgsqlBin, _ = filepath.Abs(pgsqlBin)
 		} else {
-			return fmt.Errorf("docker not found")
+			return errors.New("docker not found")
 		}
 		psqlArgs = append([]string{"exec", app.Config.Docker.ContainerID, "psql"}, psqlArgs...)
 	} else {
@@ -118,7 +119,7 @@ func CreateDB(app config.Application) error {
 		if err == nil {
 			pgsqlBin, _ = filepath.Abs(pgsqlBin)
 		} else {
-			return fmt.Errorf("psql not found")
+			return errors.New("psql not found")
 		}
 	}
 
@@ -130,7 +131,7 @@ func CreateDB(app config.Application) error {
 		if strings.Contains(errb.String(), "already exists") {
 			app.InfoLog.Info("Database already exists, skipping creation...")
 		} else {
-			return fmt.Errorf(errb.String())
+			return errors.New(errb.String())
 		}
 	}
 	return nil
@@ -162,7 +163,7 @@ func Restore(app config.Application) error {
 		if err == nil {
 			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
 		} else {
-			return fmt.Errorf("docker not found")
+			return errors.New("docker not found")
 		}
 		pgRestoreArgs = append([]string{"exec", app.Config.Docker.ContainerID, "pg_restore"}, pgRestoreArgs...)
 	} else {
@@ -170,7 +171,7 @@ func Restore(app config.Application) error {
 		if err == nil {
 			pgRestoreBin, _ = filepath.Abs(pgRestoreBin)
 		} else {
-			return fmt.Errorf("pg_restore not found")
+			return errors.New("pg_restore not found")
 		}
 	}
 
@@ -182,7 +183,7 @@ func Restore(app config.Application) error {
 		if strings.Contains(errb.String(), "errors ignored on restore") {
 			app.InfoLog.Info("Some errors during restore where ignored.")
 		} else {
-			return fmt.Errorf(errb.String())
+			return errors.New(errb.String())
 		}
 	}
 	return nil

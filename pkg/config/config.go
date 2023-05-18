@@ -17,6 +17,16 @@ import (
 const AppName = "bocker"
 const cfgFile = "config.yaml"
 
+type Options struct {
+	Container   string
+	Username    string
+	Host        string
+	Source      string
+	Namespace   string
+	Repository  string
+	ExportRoles bool
+}
+
 type config struct {
 	Docker struct {
 		Namespace   string
