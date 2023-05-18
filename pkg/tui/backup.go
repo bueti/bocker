@@ -147,11 +147,9 @@ func InitTui(opts config.Options) error {
 	App.Config.DB.Host = opts.Host
 	App.Config.DB.SourceName = opts.Source
 	App.Config.DB.ExportRoles = opts.ExportRoles
-	App.Config.Docker.Repository = opts.Repository
-	App.Config.Docker.Namespace = opts.Namespace
 	App.Config.Docker.ContainerID = opts.Container
 	App.Config.Docker.Tag = App.Config.DB.DateTime
-	App.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", App.Config.Docker.Namespace, App.Config.Docker.Repository, App.Config.Docker.Tag)
+	App.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", opts.Namespace, opts.Repository, App.Config.Docker.Tag)
 
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
