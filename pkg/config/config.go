@@ -24,6 +24,9 @@ type Options struct {
 	Source      string
 	Namespace   string
 	Repository  string
+	Tag         string
+	Target      string
+	Owner       string
 	ExportRoles bool
 }
 

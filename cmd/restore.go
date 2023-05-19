@@ -22,12 +22,8 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
-	"bocker.software-services.dev/pkg/db"
-	"bocker.software-services.dev/pkg/docker"
+	"bocker.software-services.dev/pkg/tui"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -36,71 +32,25 @@ var restoreCmd = &cobra.Command{
 	Use:   "restore",
 	Short: "Restores a Posgres database",
 	Run: func(cmd *cobra.Command, args []string) {
-		app := app.Setup()
-
-		tmpDir, err := os.MkdirTemp("", "")
+		err := tui.InitRestoreTui(opts)
 		if err != nil {
-			app.ErroLog.Fatal(err)
+			log.Fatal(err)
 		}
-		defer os.RemoveAll(tmpDir)
-		app.Config.TmpDir = tmpDir
-
-		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
-
-		err = docker.Pull(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err.Error())
-		}
-
-		app.InfoLog.Info("Extracting backup from Docker image...")
-		err = docker.Unpack(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err)
-		}
-
-		app.InfoLog.Info("Creating database...")
-		err = db.CreateDB(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err)
-		}
-
-		backupFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag))
-		if app.Config.Docker.ContainerID != "" {
-			err = docker.CopyTo(app.Config.Docker.ContainerID, backupFile)
-			if err != nil {
-				app.ErroLog.Fatal(err)
-			}
-		}
-
-		if app.Config.DB.ImportRoles {
-			rolesFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.SourceName, app.Config.DB.DateTime))
-			if app.Config.Docker.ContainerID != "" {
-				err = docker.CopyTo(app.Config.Docker.ContainerID, rolesFile)
-				if err != nil {
-					app.ErroLog.Fatal(err)
-				}
-			}
-		}
-
-		app.InfoLog.Info("Restoring database...")
-		err = db.Restore(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err)
-		}
-		fmt.Println("Database successfully restored.")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(restoreCmd)
 
-	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "db-owner", "o", "", "Database user ")
-	restoreCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
-	restoreCmd.Flags().StringVarP(&app.Config.DB.TargetName, "db-target", "t", "", "Target database name")
-	restoreCmd.Flags().StringVar(&app.Config.DB.Host, "db-host", "localhost", "Hostname of the database host")
-	restoreCmd.Flags().StringVar(&app.Config.Docker.Tag, "tag", "", "Tag of the image with the backup in it")
-	restoreCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
-	restoreCmd.Flags().BoolVar(&app.Config.DB.ImportRoles, "import-roles", false, "Create roles from backup")
+	restoreCmd.Flags().StringVarP(&opts.Owner, "db-owner", "o", "", "Database user ")
+	restoreCmd.Flags().StringVarP(&opts.Source, "db-source", "s", "", "Source database name")
+	restoreCmd.Flags().StringVarP(&opts.Target, "db-target", "t", "", "Target database name")
+	restoreCmd.Flags().StringVar(&opts.Host, "db-host", "localhost", "Hostname of the database host")
+	restoreCmd.Flags().StringVar(&opts.Tag, "tag", "", "Tag of the image with the backup in it")
+	restoreCmd.Flags().StringVarP(&opts.Container, "container-id", "c", "", "ID of container running PostgreSQL")
+	restoreCmd.Flags().BoolVar(&opts.ExportRoles, "import-roles", false, "Create roles from backup")
+	restoreCmd.Flags().StringVarP(&opts.Namespace, "namespace", "n", "bueti", "Docker Namespace")
+	restoreCmd.Flags().StringVarP(&opts.Repository, "repository", "r", "", "Docker Repository")
 
 	restoreCmd.MarkFlagRequired("tag")
 	restoreCmd.MarkFlagRequired("db-owner")

@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/db"
@@ -11,16 +12,17 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-func InitBackupTui(opts config.Options) error {
+func InitRestoreTui(opts config.Options) error {
 	App = config.Application{}
 	app := App.Setup()
 	App = *app
-	App.Config.DB.User = opts.Username
+	App.Config.DB.Owner = opts.Owner
 	App.Config.DB.Host = opts.Host
 	App.Config.DB.SourceName = opts.Source
+	App.Config.DB.TargetName = opts.Target
 	App.Config.DB.ExportRoles = opts.ExportRoles
 	App.Config.Docker.ContainerID = opts.Container
-	App.Config.Docker.Tag = App.Config.DB.DateTime
+	App.Config.Docker.Tag = opts.Tag
 	App.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", opts.Namespace, opts.Repository, App.Config.Docker.Tag)
 
 	tmpDir, err := os.MkdirTemp("", "")
@@ -32,11 +34,11 @@ func InitBackupTui(opts config.Options) error {
 
 	var stages = []Stage{
 		{
-			Name: "Creating Backup",
+			Name: "Pull Backup Image",
 			Action: func() error {
-				err := db.Dump(App)
+				err := docker.Pull(App)
 				if err != nil {
-					log.Error("dump failed", "err", err)
+					log.Error("docker pull failed", "err", err)
 					return err
 				}
 				return nil
@@ -45,15 +47,12 @@ func InitBackupTui(opts config.Options) error {
 			IsComplete:     false,
 		},
 		{
-			Name: "Exporting Rules",
+			Name: "Extracting backup from image",
 			Action: func() error {
-				if App.Config.DB.ExportRoles {
-					App.InfoLog.Info("Exporting roles...")
-					err := db.ExportRoles(App)
-					if err != nil {
-						log.Error("failed to export roles", "err", err)
-						return err
-					}
+				err := docker.Unpack(App)
+				if err != nil {
+					log.Error("failed to extract backup", "err", err)
+					return err
 				}
 				return nil
 			},
@@ -61,12 +60,26 @@ func InitBackupTui(opts config.Options) error {
 			IsComplete:     false,
 		},
 		{
-			Name: "Copy from Container",
+			Name: "Creating Database",
 			Action: func() error {
+				err := db.CreateDB(App)
+				if err != nil {
+					log.Error("failed to create database", "err", err)
+					return err
+				}
+				return nil
+			},
+			IsCompleteFunc: func() bool { return false },
+			IsComplete:     false,
+		},
+		{
+			Name: "Copy backup to container",
+			Action: func() error {
+				backupFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_backup.psql", App.Config.DB.SourceName, App.Config.Docker.Tag))
 				if App.Config.Docker.ContainerID != "" {
-					err := docker.CopyFrom(App)
+					err = docker.CopyTo(App.Config.Docker.ContainerID, backupFile)
 					if err != nil {
-						log.Error("failed to copy backup from container", "err", err)
+						log.Error("failed to copy backup to container", "err", err)
 						return err
 					}
 				}
@@ -76,12 +89,17 @@ func InitBackupTui(opts config.Options) error {
 			IsComplete:     false,
 		},
 		{
-			Name: "Building Image",
+			Name: "Import Roles",
 			Action: func() error {
-				err := docker.Build(App)
-				if err != nil {
-					log.Error("failed to building image", "err", err)
-					return err
+				if App.Config.DB.ImportRoles {
+					rolesFile := filepath.Join(App.Config.TmpDir, fmt.Sprintf("%s_%s_roles_backup.sql", App.Config.DB.SourceName, App.Config.DB.DateTime))
+					if App.Config.Docker.ContainerID != "" {
+						err = docker.CopyTo(App.Config.Docker.ContainerID, rolesFile)
+						if err != nil {
+							log.Error("failed to import roles", "err", err)
+							return err
+						}
+					}
 				}
 				return nil
 			},
@@ -89,11 +107,11 @@ func InitBackupTui(opts config.Options) error {
 			IsComplete:     false,
 		},
 		{
-			Name: "Pushing Image",
+			Name: "Restoring Database",
 			Action: func() error {
-				err := docker.Push(App)
+				err := db.Restore(App)
 				if err != nil {
-					log.Error("failed to push image", "err", err)
+					log.Error("failed to restore database", "err", err)
 					return err
 				}
 				return nil

@@ -10,6 +10,7 @@ import (
 
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/logger"
+	"github.com/charmbracelet/log"
 )
 
 func Dump(app config.Application) error {
@@ -126,13 +127,14 @@ func CreateDB(app config.Application) error {
 		}
 	}
 
+	logger.LogCommand(pgsqlBin + " " + strings.Join(psqlArgs, " "))
 	psqlCmd := exec.Command(pgsqlBin, psqlArgs...)
 	psqlCmd.Stdout = &outb
 	psqlCmd.Stderr = &errb
 	err = psqlCmd.Run()
 	if err != nil {
 		if strings.Contains(errb.String(), "already exists") {
-			app.InfoLog.Info("Database already exists, skipping creation...")
+			log.Info("Database already exists, skipping creation...")
 		} else {
 			return errors.New(errb.String())
 		}
@@ -178,13 +180,14 @@ func Restore(app config.Application) error {
 		}
 	}
 
+	logger.LogCommand(pgRestoreBin + " " + strings.Join(pgRestoreArgs, " "))
 	pgRestoreCmd := exec.Command(pgRestoreBin, pgRestoreArgs...)
 	pgRestoreCmd.Stdout = &outb
 	pgRestoreCmd.Stderr = &errb
 	err = pgRestoreCmd.Run()
 	if err != nil {
 		if strings.Contains(errb.String(), "errors ignored on restore") {
-			app.InfoLog.Info("Some errors during restore where ignored.")
+			log.Info("Some errors during restore where ignored.")
 		} else {
 			return errors.New(errb.String())
 		}

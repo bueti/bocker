@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"bocker.software-services.dev/pkg/config"
-	"bocker.software-services.dev/pkg/helpers"
+	"bocker.software-services.dev/pkg/tar"
 	"github.com/docker/docker/api/types"
 )
 
@@ -196,7 +196,7 @@ func Unpack(app config.Application) error {
 
 	// unpack layer
 	manifestFile := "manifest.json"
-	err = helpers.Untar(outputFilePath, manifestFile, app.Config.TmpDir)
+	err = tar.Untar(outputFilePath, manifestFile, app.Config.TmpDir)
 	if err != nil {
 		app.ErroLog.Fatal("Couldn't unpack file", "file", manifestFile, "err", err)
 	}
@@ -214,13 +214,13 @@ func Unpack(app config.Application) error {
 
 	backupLayerTar := manifest[0].Layers[len(manifest[0].Layers)-1]
 
-	err = helpers.Untar(filepath.Join(app.Config.TmpDir, outputFile), backupLayerTar, app.Config.TmpDir)
+	err = tar.Untar(filepath.Join(app.Config.TmpDir, outputFile), backupLayerTar, app.Config.TmpDir)
 	if err != nil {
 		return err
 	}
 
 	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag)
-	err = helpers.Untar(filepath.Join(app.Config.TmpDir, backupLayerTar), app.Config.DB.BackupFileName, app.Config.TmpDir)
+	err = tar.Untar(filepath.Join(app.Config.TmpDir, backupLayerTar), app.Config.DB.BackupFileName, app.Config.TmpDir)
 	if err != nil {
 		return err
 	}
