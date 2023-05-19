@@ -132,7 +132,11 @@ func (e errMsg) Error() string { return e.err.Error() }
 
 func initialModel() model {
 	s := spinner.New()
-	s.Spinner = spinner.Line
+	clock := spinner.Spinner{
+		Frames: []string{"🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"},
+		FPS:    time.Second / 8, //nolint:gomnd
+	}
+	s.Spinner = clock
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	return model{
 		spinner: s,
@@ -212,13 +216,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func renderCheckbox(s Stage) string {
 	sb := strings.Builder{}
 	if s.Error != nil {
-		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render(" ❌ "))
+		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Render("  ❌ "))
 	} else if s.IsComplete {
-		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Render(" ✅ "))
+		sb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("170")).Render("  ✅ "))
 	} else if s.IsActive {
 		sb.WriteString(" ")
 	} else {
-		sb.WriteString(" ⏳ ")
+		sb.WriteString("  ⏳ ")
 	}
 	return sb.String()
 }
