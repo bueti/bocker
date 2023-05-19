@@ -1,4 +1,4 @@
-package helpers
+package tar
 
 import (
 	"os/exec"
@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Extracts a single file from a tar file.
+// Untar extracts a single file from a tar file.
 func Untar(tarFile, extractFile, dir string) error {
 	tarBin, err := exec.LookPath("tar")
 	if err == nil {
