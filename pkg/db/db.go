@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/logger"
 )
 
 func Dump(app config.Application) error {
@@ -44,6 +45,7 @@ func Dump(app config.Application) error {
 		}
 	}
 
+	logger.LogCommand(pgDumpBin + " " + strings.Join(pgDumpArgs, " "))
 	bkpCmd := exec.Command(pgDumpBin, pgDumpArgs...)
 	bkpCmd.Stdout = &outb
 	bkpCmd.Stderr = &errb
@@ -88,6 +90,7 @@ func ExportRoles(app config.Application) error {
 		}
 	}
 
+	logger.LogCommand(pgDumpallBin + " " + strings.Join(pgDumpallArgs, " "))
 	bkpCmd := exec.Command(pgDumpallBin, pgDumpallArgs...)
 	bkpCmd.Stdout = &outb
 	bkpCmd.Stderr = &errb
