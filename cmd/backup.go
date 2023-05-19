@@ -22,13 +22,13 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"fmt"
-	"os"
-
-	"bocker.software-services.dev/pkg/db"
-	"bocker.software-services.dev/pkg/docker"
+	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/tui"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
+
+var opts config.Options
 
 // backupCmd represents the backup command
 var backupCmd = &cobra.Command{
@@ -45,61 +45,23 @@ Requires:
 Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
-		app := app.Setup()
 
-		tmpDir, err := os.MkdirTemp("", "")
+		err := tui.InitTui(opts)
 		if err != nil {
-			app.ErroLog.Fatal(err)
+			log.Fatal(err)
 		}
-		defer os.RemoveAll(tmpDir)
-		app.Config.TmpDir = tmpDir
-
-		app.Config.Docker.Tag = app.Config.DB.DateTime
-		app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
-
-		app.InfoLog.Info("Creating backup...")
-		err = db.Dump(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err.Error())
-		}
-
-		if app.Config.DB.ExportRoles {
-			app.InfoLog.Info("Exporting roles...")
-			err := db.ExportRoles(*app)
-			if err != nil {
-				app.ErroLog.Fatal(err.Error())
-			}
-		}
-
-		if app.Config.Docker.ContainerID != "" {
-			err := docker.CopyFrom(*app)
-			if err != nil {
-				app.ErroLog.Fatal(err)
-			}
-		}
-
-		app.InfoLog.Info("Building image...")
-		err = docker.Build(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err)
-		}
-
-		app.InfoLog.Info("Pushing image...")
-		err = docker.Push(*app)
-		if err != nil {
-			app.ErroLog.Fatal(err)
-		}
-		fmt.Printf("Published image %s\n", app.Config.Docker.ImagePath)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
-	backupCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
-	backupCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
-	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
+	backupCmd.Flags().StringVarP(&opts.Username, "db-user", "u", "", "Database user name (required)")
+	backupCmd.Flags().StringVarP(&opts.Host, "db-host", "", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVarP(&opts.Source, "db-source", "s", "", "Source database name")
+	backupCmd.Flags().StringVarP(&opts.Container, "container-id", "c", "", "ID of container running PostgreSQL")
+	backupCmd.Flags().StringVarP(&opts.Namespace, "namespace", "n", "bueti", "Docker Namespace")
+	backupCmd.Flags().StringVarP(&opts.Repository, "repository", "r", "", "Docker Repository")
+	backupCmd.Flags().BoolVar(&opts.ExportRoles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("db-name")
 	backupCmd.MarkFlagRequired("db-user")
