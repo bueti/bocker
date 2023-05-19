@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/logger"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 )
@@ -58,7 +59,7 @@ func (c *APIClient) ParseOutput(app config.Application, out io.ReadCloser) error
 	}
 
 	for _, v := range stati {
-		app.InfoLog.Info(v.Status)
+		logger.LogCommand(v.Status)
 	}
 	return nil
 }
