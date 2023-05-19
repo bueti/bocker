@@ -31,6 +31,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var opts config.Options
+
 // rootCmd represents the base command when called without any subcommands
 var (
 	app     = &config.Application{}

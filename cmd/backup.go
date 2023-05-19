@@ -22,13 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/tui"
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
-
-var opts config.Options
 
 // backupCmd represents the backup command
 var backupCmd = &cobra.Command{
@@ -46,7 +43,7 @@ Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := tui.InitTui(opts)
+		err := tui.InitBackupTui(opts)
 		if err != nil {
 			log.Fatal(err)
 		}
