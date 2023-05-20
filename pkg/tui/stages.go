@@ -96,8 +96,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) View() string {
 	sb := strings.Builder{}
 
-	//sb.WriteString(fmt.Sprintf("Current stage: %s\n", m.stages[m.stageIndex].Name))
-
 	for _, stage := range m.stages {
 		sb.WriteString(renderCheckbox(stage) + " " + renderWorkingStatus(*m, stage) + "\n")
 	}
@@ -136,8 +134,10 @@ func renderCheckbox(s Stage) string {
 func renderWorkingStatus(m model, s Stage) string {
 	sb := strings.Builder{}
 	if !s.IsComplete && s.IsActive {
-		sb.WriteString(m.spinner.View())
-		sb.WriteString(" ")
+		if s.Error == nil {
+			sb.WriteString(m.spinner.View())
+			sb.WriteString(" ")
+		}
 	}
 	sb.WriteString(s.Name)
 	return sb.String()

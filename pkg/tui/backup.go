@@ -7,8 +7,8 @@ import (
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/db"
 	"bocker.software-services.dev/pkg/docker"
+	"bocker.software-services.dev/pkg/logger"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/log"
 )
 
 func InitBackupTui(app *config.Application) error {
@@ -18,7 +18,8 @@ func InitBackupTui(app *config.Application) error {
 
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		log.Error(err)
+		logger.LogCommand(err.Error())
+		return err
 	}
 	defer os.RemoveAll(tmpDir)
 	app.Config.TmpDir = tmpDir
@@ -29,7 +30,8 @@ func InitBackupTui(app *config.Application) error {
 			Action: func() error {
 				err := db.Dump(*app)
 				if err != nil {
-					log.Error("dump failed", "err", err)
+					logger.LogCommand("pg_dump failed")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
@@ -43,7 +45,8 @@ func InitBackupTui(app *config.Application) error {
 				if app.Config.DB.ExportRoles {
 					err := db.ExportRoles(*app)
 					if err != nil {
-						log.Error("failed to export roles", "err", err)
+						logger.LogCommand("failed to export roles")
+						logger.LogCommand(err.Error())
 						return err
 					}
 				}
@@ -58,7 +61,8 @@ func InitBackupTui(app *config.Application) error {
 				if app.Config.Docker.ContainerID != "" {
 					err := docker.CopyFrom(*app)
 					if err != nil {
-						log.Error("failed to copy backup from container", "err", err)
+						logger.LogCommand("failed to copy backup from container")
+						logger.LogCommand(err.Error())
 						return err
 					}
 				}
@@ -72,7 +76,8 @@ func InitBackupTui(app *config.Application) error {
 			Action: func() error {
 				err := docker.Build(*app)
 				if err != nil {
-					log.Error("failed to building image", "err", err)
+					logger.LogCommand("failed to building image")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
@@ -85,7 +90,8 @@ func InitBackupTui(app *config.Application) error {
 			Action: func() error {
 				err := docker.Push(*app)
 				if err != nil {
-					log.Error("failed to push image", "err", err)
+					logger.LogCommand("failed to push image")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
