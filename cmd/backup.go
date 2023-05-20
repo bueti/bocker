@@ -43,7 +43,7 @@ Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := tui.InitBackupTui(opts)
+		err := tui.InitBackupTui(app)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -52,13 +52,11 @@ bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringVarP(&opts.Username, "db-user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVarP(&opts.Host, "db-host", "", "localhost", "Hostname of the database host")
-	backupCmd.Flags().StringVarP(&opts.Source, "db-source", "s", "", "Source database name")
-	backupCmd.Flags().StringVarP(&opts.Container, "container-id", "c", "", "ID of container running PostgreSQL")
-	backupCmd.Flags().StringVarP(&opts.Namespace, "namespace", "n", "bueti", "Docker Namespace")
-	backupCmd.Flags().StringVarP(&opts.Repository, "repository", "r", "", "Docker Repository")
-	backupCmd.Flags().BoolVar(&opts.ExportRoles, "export-roles", false, "Include roles in backup")
+	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
+	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
+	backupCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
+	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 
 	backupCmd.MarkFlagRequired("db-name")
 	backupCmd.MarkFlagRequired("db-user")

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"bocker.software-services.dev/pkg/config"
+	"bocker.software-services.dev/pkg/logger"
 	"bocker.software-services.dev/pkg/tar"
 	"github.com/docker/docker/api/types"
 )
@@ -198,7 +199,9 @@ func Unpack(app config.Application) error {
 	manifestFile := "manifest.json"
 	err = tar.Untar(outputFilePath, manifestFile, app.Config.TmpDir)
 	if err != nil {
-		app.ErroLog.Fatal("Couldn't unpack file", "file", manifestFile, "err", err)
+		logger.LogCommand("Couldn't unpack file")
+		logger.LogCommand(err.Error())
+		return err
 	}
 
 	// read manifest.json and extract layer with backup in it

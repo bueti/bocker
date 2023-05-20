@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"bocker.software-services.dev/pkg/backup"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +36,7 @@ var listCmd = &cobra.Command{
 
 		err := backup.List(*app)
 		if err != nil {
-			app.ErroLog.Fatal(err)
+			log.Error(err)
 		}
 
 	},

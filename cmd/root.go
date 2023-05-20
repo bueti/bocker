@@ -23,15 +23,10 @@ package cmd
 
 import (
 	"os"
-	"time"
-
-	"github.com/charmbracelet/log"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
 )
-
-var opts config.Options
 
 // rootCmd represents the base command when called without any subcommands
 var (
@@ -40,7 +35,7 @@ var (
 		Use:   "bocker",
 		Short: "Create Postgresql backups and store them in Docker images",
 		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
+wraps it in a Docker image, and uploads it to Docker Hub. Of course, Bocker will also do the 
 reverse and restore your database from a backup in Docker Hub.`,
 	}
 )
@@ -55,20 +50,6 @@ func Execute() {
 }
 
 func init() {
-	app.InfoLog = *log.NewWithOptions(os.Stdout, log.Options{
-		ReportCaller:    true,
-		ReportTimestamp: true,
-		TimeFormat:      time.Kitchen,
-		Level:           log.InfoLevel,
-	})
-	app.ErroLog = *log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    true,
-		ReportTimestamp: true,
-		TimeFormat:      time.Kitchen,
-		Level:           log.ErrorLevel,
-	})
-
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
-
 }
