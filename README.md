@@ -54,7 +54,7 @@ To restore a database you'll need supply a few parameters:
 ```shell
 $ bocker restore -h
 
-Restores a Posgres database
+Restores a Postgres database
 
 Usage:
   bocker restore [flags]

@@ -30,7 +30,7 @@ import (
 // restoreCmd represents the restore command
 var restoreCmd = &cobra.Command{
 	Use:   "restore",
-	Short: "Restores a Posgres database",
+	Short: "Restore a Postgresql database",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := tui.InitRestoreTui(opts)
 		if err != nil {
