@@ -201,6 +201,7 @@ func Unpack(app config.Application) error {
 	if err != nil {
 		logger.LogCommand("Couldn't unpack file")
 		logger.LogCommand(err.Error())
+		return err
 	}
 
 	// read manifest.json and extract layer with backup in it
