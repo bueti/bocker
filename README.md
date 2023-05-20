@@ -48,6 +48,35 @@ bocker backup list -n <namespace> -r <repository>
 
 ![bocker backup list](https://vhs.charm.sh/vhs-3LVSVJ42TqACEBIIGcRR4g.gif)
 
+### Restore backup
+
+To restore a database you'll need supply a few parameters:
+```shell
+$ bocker restore -h
+
+Restores a Posgres database
+
+Usage:
+  bocker restore [flags]
+
+Flags:
+  -c, --container-id string   ID of container running PostgreSQL
+      --db-host string        Hostname of the database host (default "localhost")
+  -o, --db-owner string       Database user
+  -s, --db-source string      Source database name
+  -t, --db-target string      Target database name
+  -h, --help                  help for restore
+      --import-roles          Create roles from backup
+  -n, --namespace string      Docker Namespace (default "bueti")
+  -r, --repository string     Docker Repository
+      --tag string            Tag of the image with the backup in it
+```
+
+```sh
+bocker restore -r greenlight_backup -o postgres -s greenlight -t greenlight_test --tag 2023-02-14_21-11-43
+```
+![Made with VHS](https://vhs.charm.sh/vhs-3tyELWQdiy2wxPcDn1391H.gif)
+
 ### More
 There are some assumptions made:
 

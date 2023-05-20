@@ -10,7 +10,6 @@ import (
 
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/logger"
-	"github.com/charmbracelet/log"
 )
 
 func Dump(app config.Application) error {
@@ -187,7 +186,8 @@ func Restore(app config.Application) error {
 	err = pgRestoreCmd.Run()
 	if err != nil {
 		if strings.Contains(errb.String(), "errors ignored on restore") {
-			log.Info("Some errors during restore where ignored.")
+			logger.LogCommand("Some errors during restore where ignored.")
+			logger.LogCommand(errb.String())
 		} else {
 			return errors.New(errb.String())
 		}
