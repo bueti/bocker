@@ -27,7 +27,7 @@ func InitRestoreTui(opts config.Options) error {
 
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		App.ErroLog.Fatal(err)
+		log.Error(err)
 	}
 	defer os.RemoveAll(tmpDir)
 	App.Config.TmpDir = tmpDir

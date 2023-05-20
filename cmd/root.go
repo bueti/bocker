@@ -23,9 +23,6 @@ package cmd
 
 import (
 	"os"
-	"time"
-
-	"github.com/charmbracelet/log"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
@@ -55,19 +52,6 @@ func Execute() {
 }
 
 func init() {
-	app.InfoLog = *log.NewWithOptions(os.Stdout, log.Options{
-		ReportCaller:    true,
-		ReportTimestamp: true,
-		TimeFormat:      time.Kitchen,
-		Level:           log.InfoLevel,
-	})
-	app.ErroLog = *log.NewWithOptions(os.Stderr, log.Options{
-		ReportCaller:    true,
-		ReportTimestamp: true,
-		TimeFormat:      time.Kitchen,
-		Level:           log.ErrorLevel,
-	})
-
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
 

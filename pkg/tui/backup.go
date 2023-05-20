@@ -25,7 +25,7 @@ func InitBackupTui(opts config.Options) error {
 
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		App.ErroLog.Fatal(err)
+		log.Error(err)
 	}
 	defer os.RemoveAll(tmpDir)
 	App.Config.TmpDir = tmpDir
@@ -45,10 +45,9 @@ func InitBackupTui(opts config.Options) error {
 			IsComplete:     false,
 		},
 		{
-			Name: "Exporting Rules",
+			Name: "Exporting Roles",
 			Action: func() error {
 				if App.Config.DB.ExportRoles {
-					App.InfoLog.Info("Exporting roles...")
 					err := db.ExportRoles(App)
 					if err != nil {
 						log.Error("failed to export roles", "err", err)

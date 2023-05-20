@@ -14,6 +14,7 @@ import (
 	"bocker.software-services.dev/pkg/docker"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 )
 
 type Layer struct {
@@ -63,7 +64,7 @@ type ListTagsResponse struct {
 func List(app config.Application) error {
 	c, err := docker.NewHTTPClient(app)
 	if err != nil {
-		app.ErroLog.Fatal(err)
+		log.Error(err)
 	}
 
 	path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", app.Config.Docker.Namespace, app.Config.Docker.Repository)
@@ -109,7 +110,7 @@ func List(app config.Application) error {
 		}
 
 	} else {
-		app.ErroLog.Print(resp.StatusCode)
+		log.Error(resp.StatusCode)
 	}
 
 	return nil

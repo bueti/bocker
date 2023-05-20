@@ -58,9 +58,7 @@ type config struct {
 }
 
 type Application struct {
-	Config  config
-	InfoLog log.Logger
-	ErroLog log.Logger
+	Config config
 }
 
 type Username struct {
