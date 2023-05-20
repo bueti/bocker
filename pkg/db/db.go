@@ -134,7 +134,7 @@ func CreateDB(app config.Application) error {
 	err = psqlCmd.Run()
 	if err != nil {
 		if strings.Contains(errb.String(), "already exists") {
-			log.Info("Database already exists, skipping creation...")
+			logger.LogCommand("Database already exists, skipping creation...")
 		} else {
 			return errors.New(errb.String())
 		}

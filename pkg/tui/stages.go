@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -68,11 +67,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		// Otherwise, mark the current stage as complete and move to the next stage
 		m.stages[m.stageIndex].IsComplete = true
+		m.stages[m.stageIndex].IsActive = false
 		// If we've reached the end of the defined stages, we're done
 		if m.stageIndex+1 >= len(m.stages) {
 			return m, tea.Quit
 		}
 		m.stageIndex++
+		// set next stage to active
 		m.stages[m.stageIndex].IsActive = true
 		return m, m.runStage
 
@@ -98,7 +99,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) View() string {
 	sb := strings.Builder{}
 
-	sb.WriteString(fmt.Sprintf("Current stage: %s\n", m.stages[m.stageIndex].Name))
+	//sb.WriteString(fmt.Sprintf("Current stage: %s\n", m.stages[m.stageIndex].Name))
 
 	for _, stage := range m.stages {
 		sb.WriteString(renderCheckbox(stage) + " " + renderWorkingStatus(*m, stage) + "\n")
