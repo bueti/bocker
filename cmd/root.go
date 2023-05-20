@@ -28,8 +28,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var opts config.Options
-
 // rootCmd represents the base command when called without any subcommands
 var (
 	app     = &config.Application{}
@@ -37,7 +35,7 @@ var (
 		Use:   "bocker",
 		Short: "Create Postgresql backups and store them in Docker images",
 		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
+wraps it in a Docker image, and uploads it to Docker Hub. Of course, Bocker will also do the 
 reverse and restore your database from a backup in Docker Hub.`,
 	}
 )
@@ -54,5 +52,4 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Namespace, "namespace", "n", "bueti", "Docker Namespace")
 	rootCmd.PersistentFlags().StringVarP(&app.Config.Docker.Repository, "repository", "r", "", "Docker Repository")
-
 }

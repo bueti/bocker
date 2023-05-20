@@ -32,7 +32,7 @@ var restoreCmd = &cobra.Command{
 	Use:   "restore",
 	Short: "Restore a Postgresql database",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := tui.InitRestoreTui(opts)
+		err := tui.InitRestoreTui(app)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -42,15 +42,13 @@ var restoreCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(restoreCmd)
 
-	restoreCmd.Flags().StringVarP(&opts.Owner, "db-owner", "o", "", "Database user ")
-	restoreCmd.Flags().StringVarP(&opts.Source, "db-source", "s", "", "Source database name")
-	restoreCmd.Flags().StringVarP(&opts.Target, "db-target", "t", "", "Target database name")
-	restoreCmd.Flags().StringVar(&opts.Host, "db-host", "localhost", "Hostname of the database host")
-	restoreCmd.Flags().StringVar(&opts.Tag, "tag", "", "Tag of the image with the backup in it")
-	restoreCmd.Flags().StringVarP(&opts.Container, "container-id", "c", "", "ID of container running PostgreSQL")
-	restoreCmd.Flags().BoolVar(&opts.ExportRoles, "import-roles", false, "Create roles from backup")
-	restoreCmd.Flags().StringVarP(&opts.Namespace, "namespace", "n", "bueti", "Docker Namespace")
-	restoreCmd.Flags().StringVarP(&opts.Repository, "repository", "r", "", "Docker Repository")
+	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "db-owner", "o", "", "Database user ")
+	restoreCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
+	restoreCmd.Flags().StringVarP(&app.Config.DB.TargetName, "db-target", "t", "", "Target database name")
+	restoreCmd.Flags().StringVar(&app.Config.DB.Host, "db-host", "localhost", "Hostname of the database host")
+	restoreCmd.Flags().StringVar(&app.Config.Docker.Tag, "tag", "", "Tag of the image with the backup in it")
+	restoreCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
+	restoreCmd.Flags().BoolVar(&app.Config.DB.ImportRoles, "import-roles", false, "Create roles from backup")
 
 	restoreCmd.MarkFlagRequired("tag")
 	restoreCmd.MarkFlagRequired("db-owner")

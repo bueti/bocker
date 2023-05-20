@@ -4,14 +4,11 @@ import (
 	"strings"
 	"time"
 
-	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/logger"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
-
-var App config.Application
 
 type Stage struct {
 	Name           string

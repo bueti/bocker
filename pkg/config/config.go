@@ -17,19 +17,6 @@ import (
 const AppName = "bocker"
 const cfgFile = "config.yaml"
 
-type Options struct {
-	Container   string
-	Username    string
-	Host        string
-	Source      string
-	Namespace   string
-	Repository  string
-	Tag         string
-	Target      string
-	Owner       string
-	ExportRoles bool
-}
-
 type config struct {
 	Docker struct {
 		Namespace   string
@@ -198,7 +185,10 @@ func ConfigTui() error {
 		return nil
 	}
 
-	SetKey(AppName, ans.Password)
+	err = SetKey(AppName, ans.Password)
+	if err != nil {
+		return err
+	}
 	err = SetUsername(ans.Username)
 	if err != nil {
 		return err
