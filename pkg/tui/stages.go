@@ -109,7 +109,7 @@ func (m *model) View() string {
 func newModel(stages []Stage) model {
 	s := spinner.New()
 	clock := spinner.Spinner{
-		Frames: []string{"🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚", "🕛"},
+		Frames: []string{"🕐 ", "🕑 ", "🕒 ", "🕓 ", "🕔 ", "🕕 ", "🕖 ", "🕗 ", "🕘 ", "🕙 ", "🕚 ", "🕛 "},
 		FPS:    time.Second / 8, //nolint:gomnd
 	}
 	s.Spinner = clock
