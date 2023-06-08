@@ -8,6 +8,7 @@ import (
 	"time"
 
 	tui "bocker.software-services.dev/pkg/config/tui/setup"
+	"github.com/adrg/xdg"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/zalando/go-keyring"
@@ -109,11 +110,11 @@ func GetKey(service string) (string, error) {
 func GetUsername() (*Username, error) {
 	var username Username
 
-	home, err := os.UserHomeDir()
+	dir, err := xdg.ConfigFile(AppName)
 	if err != nil {
 		return nil, err
 	}
-	fullPath := filepath.Join(home, ".config", "bocker", cfgFile)
+	fullPath := filepath.Join(dir, cfgFile)
 
 	data, err := os.ReadFile(fullPath)
 	if err != nil {
@@ -141,11 +142,10 @@ func SetUsername(username string) error {
 		creds.Username = username
 	}
 
-	home, err := os.UserHomeDir()
+	fullPath, err := xdg.ConfigFile(AppName)
 	if err != nil {
 		return err
 	}
-	fullPath := filepath.Join(home, ".config", "bocker")
 	err = os.MkdirAll(fullPath, os.ModePerm)
 	if err != nil {
 		return err
@@ -189,11 +189,11 @@ func ConfigTui() error {
 	if err != nil {
 		return err
 	}
+
 	err = SetUsername(ans.Username)
 	if err != nil {
 		return err
 	}
 
 	return nil
-
 }
