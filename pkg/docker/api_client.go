@@ -8,7 +8,7 @@ import (
 
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/logger"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 )
 
@@ -21,6 +21,7 @@ type Status struct {
 	ID     string `json:"id,omitempty"`
 }
 
+// NewClient returns a new docker client
 func NewClient() (*APIClient, error) {
 	c, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -30,9 +31,10 @@ func NewClient() (*APIClient, error) {
 	return &APIClient{docker: *c}, nil
 }
 
+// Authentication returns a base64 encoded string of the docker username and password
 func (c *APIClient) Authentication(app config.Application) (string, error) {
 
-	authConfig := types.AuthConfig{
+	authConfig := registry.AuthConfig{
 		Username: app.Config.Docker.Username,
 		Password: app.Config.Docker.Password,
 	}
@@ -43,7 +45,8 @@ func (c *APIClient) Authentication(app config.Application) (string, error) {
 	return base64.URLEncoding.EncodeToString(encodedJSON), nil
 }
 
-func (c *APIClient) ParseOutput(app config.Application, out io.ReadCloser) error {
+// ParseOutput parses the output from the docker build command
+func (c *APIClient) ParseOutput(out io.ReadCloser) error {
 	var stati []Status
 
 	scanner := bufio.NewScanner(out)

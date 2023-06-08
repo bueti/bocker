@@ -126,7 +126,7 @@ func Push(app config.Application) error {
 	}
 	defer out.Close()
 
-	err = c.ParseOutput(app, out)
+	err = c.ParseOutput(out)
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func Pull(app config.Application) error {
 	}
 	defer out.Close()
 
-	err = c.ParseOutput(app, out)
+	err = c.ParseOutput(out)
 	if err != nil {
 		return err
 	}
