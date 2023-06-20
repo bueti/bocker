@@ -36,6 +36,15 @@ To configure your username and password run:
 bocker config set
 ```
 
+If you want to run bocker on server where there's no keyring tool installed, set the following environment variables:
+
+```sh
+export DOCKER_USERNAME=<your docker username>
+export DOCKER_PASSWORD=<your docker password>
+```
+
+`bocker` will prefer environment variables over the keyring.
+
 ![bocker config](https://vhs.charm.sh/vhs-6w65TVtSWeJqk5oGv5N9cp.gif)
 
 ### List existing backups

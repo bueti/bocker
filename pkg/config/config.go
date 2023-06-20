@@ -96,6 +96,10 @@ func SetKey(service, secret string) error {
 
 // GetKey retrieves a key from the OS keyring
 func GetKey(service string) (string, error) {
+	if os.Getenv("DOCKER_PASSWORD") != "" {
+		return os.Getenv("DOCKER_PASSWORD"), nil
+	}
+	
 	// get password
 	secret, err := keyring.Get(service, AppName)
 	if err != nil {
@@ -109,6 +113,10 @@ func GetKey(service string) (string, error) {
 // GetUsername from configuration stored on the disk
 func GetUsername() (*Username, error) {
 	var username Username
+
+	if os.Getenv("DOCKER_USERNAME") != "" {
+		return &Username{Username: os.Getenv("DOCKER_USERNAME")}, nil
+	}
 
 	dir, err := xdg.ConfigFile(AppName)
 	if err != nil {
