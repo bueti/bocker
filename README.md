@@ -1,9 +1,12 @@
 # Backup and Restore in Docker (BockeR)
-<img align="right" src="https://github.com/bueti/bocker/assets/383917/98d90d7a-38fa-4df4-90c3-3b9bd345c9af">
 
 ## Overview
+<img align="right" src="https://github.com/bueti/bocker/assets/383917/98d90d7a-38fa-4df4-90c3-3b9bd345c9af">
+
 Have you ever looked for a cheap solution to store a database backup somewhere safe and you didn't want to bother with an S3-compatible cloud storage?
+
 Look no further, because there is **BockeR**.  
+
 BockeR is a command line tool which creates a backup from a PostgreSQL database, wraps it in a Docker image, and uploads it to Docker Hub. Of course, BockeR will also do the reverse and restore your database from a backup in Docker Hub.
 
 
