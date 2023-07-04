@@ -57,6 +57,7 @@ func init() {
 	backupCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
 	backupCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
 	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
+	backupCmd.Flags().BoolVarP(&app.Config.DaemonMode, "daemon", "d", false, "Run in daemon mode (no TTY required)")
 
 	backupCmd.MarkFlagRequired("db-name")
 	backupCmd.MarkFlagRequired("db-user")
