@@ -9,6 +9,7 @@ import (
 	"bocker.software-services.dev/pkg/docker"
 	"bocker.software-services.dev/pkg/logger"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/mattn/go-isatty"
 )
 
 func InitBackupTui(app *config.Application) error {
@@ -102,7 +103,12 @@ func InitBackupTui(app *config.Application) error {
 	}
 
 	m := newModel(stages)
-	_, err = tea.NewProgram(&m).Run()
+
+	var opts []tea.ProgramOption
+	if app.Config.DaemonMode || !isatty.IsTerminal(os.Stdout.Fd()) {
+		opts = []tea.ProgramOption{tea.WithoutRenderer()}
+	}
+	_, err = tea.NewProgram(&m, opts...).Run()
 	if err != nil {
 		return err
 	}

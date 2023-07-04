@@ -41,8 +41,9 @@ type config struct {
 		ExportRoles    bool
 		ImportRoles    bool
 	}
-	TmpDir  string
-	Context context.Context
+	TmpDir     string
+	Context    context.Context
+	DaemonMode bool
 }
 
 type Application struct {
@@ -99,7 +100,7 @@ func GetKey(service string) (string, error) {
 	if os.Getenv("DOCKER_PASSWORD") != "" {
 		return os.Getenv("DOCKER_PASSWORD"), nil
 	}
-	
+
 	// get password
 	secret, err := keyring.Get(service, AppName)
 	if err != nil {
