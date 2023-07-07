@@ -106,11 +106,11 @@ func InitBackupTui(app *config.Application) error {
 
 	var opts []tea.ProgramOption
 	if app.Config.DaemonMode || !isatty.IsTerminal(os.Stdout.Fd()) {
-		opts = []tea.ProgramOption{tea.WithoutRenderer()}
+		opts = []tea.ProgramOption{tea.WithoutRenderer(), tea.WithInput(nil)}
 	}
 	_, err = tea.NewProgram(&m, opts...).Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to run backup tui: %w", err)
 	}
 
 	return nil
