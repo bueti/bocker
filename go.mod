@@ -5,8 +5,8 @@ go 1.19
 require (
 	github.com/adrg/xdg v0.4.0
 	github.com/charmbracelet/bubbletea v0.24.2
-	github.com/charmbracelet/lipgloss v0.7.1
-	github.com/charmbracelet/log v0.2.3
+	github.com/charmbracelet/lipgloss v0.8.0
+	github.com/charmbracelet/log v0.2.4
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/mattn/go-isatty v0.0.19
 	github.com/muesli/termenv v0.15.2
