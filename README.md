@@ -13,7 +13,7 @@ BockeR is a command line tool which creates a backup from a PostgreSQL database,
 Is it a good idea? Probably not, but it solved a problem I had!
 
 
-> **Warning**  
+> [!WARNING]
 > Do **not** push the image to a public repository, or everybody in the world will have access to your database backup!
 
 ## Installation
