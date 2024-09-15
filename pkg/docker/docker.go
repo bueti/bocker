@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,7 +14,7 @@ import (
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/logger"
 	"bocker.software-services.dev/pkg/tar"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 )
 
 //go:embed "Dockerfile"
@@ -42,7 +43,7 @@ func CopyFrom(app config.Application) error {
 	cpCmd.Stderr = &errb
 	err = cpCmd.Run()
 	if err != nil {
-		return fmt.Errorf(errb.String())
+		return errors.New(errb.String())
 	}
 	return nil
 }
@@ -63,7 +64,7 @@ func CopyTo(container, filename string) error {
 	cpCmd.Stderr = &errb
 	err = cpCmd.Run()
 	if err != nil {
-		return fmt.Errorf(errb.String())
+		return errors.New(errb.String())
 	}
 	return nil
 }
@@ -103,7 +104,7 @@ func Build(app config.Application) error {
 	buildCmd.Stderr = &errb
 	err = buildCmd.Run()
 	if err != nil {
-		return fmt.Errorf(errb.String())
+		return errors.New(errb.String())
 	}
 	return nil
 }
@@ -120,7 +121,7 @@ func Push(app config.Application) error {
 		return err
 	}
 
-	out, err := c.docker.ImagePush(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePushOptions{RegistryAuth: authStr})
+	out, err := c.docker.ImagePush(app.Config.Context, app.Config.Docker.ImagePath, image.PushOptions{RegistryAuth: authStr})
 	if err != nil {
 		return err
 	}
@@ -146,7 +147,7 @@ func Pull(app config.Application) error {
 		return err
 	}
 
-	out, err := c.docker.ImagePull(app.Config.Context, app.Config.Docker.ImagePath, types.ImagePullOptions{RegistryAuth: authStr})
+	out, err := c.docker.ImagePull(app.Config.Context, app.Config.Docker.ImagePath, image.PullOptions{RegistryAuth: authStr})
 	if err != nil {
 		return err
 	}

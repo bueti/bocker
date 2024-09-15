@@ -20,7 +20,6 @@ type Stage struct {
 	Reset          func() error
 }
 type model struct {
-	status     int
 	Error      error
 	stages     []Stage
 	stageIndex int
