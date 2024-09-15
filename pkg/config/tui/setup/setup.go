@@ -29,7 +29,7 @@ func InitialModel() Model {
 
 	for i := range m.inputs {
 		t = textinput.New()
-		t.CursorStyle = cursorStyle
+		t.Cursor.Style = cursorStyle
 		t.CharLimit = 255
 		t.Prompt = ""
 

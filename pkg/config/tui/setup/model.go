@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,7 +11,6 @@ import (
 
 type Model struct {
 	focusIndex int
-	cursorMode cursor.Mode
 	inputs     []textinput.Model
 	Username   string
 	Password   string
