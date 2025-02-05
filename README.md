@@ -1,5 +1,9 @@
 # Backup and Restore in Docker (BockeR)
 
+> [!NOTE]
+> With the latest pricing and subscription changes by Docker there's no longer unlimited free storage and thus this project is kinda pointless.
+> You should probably just upload your backup on an S3(-compatible) bucket :)
+
 ## Overview
 <img align="right" src="https://github.com/bueti/bocker/assets/383917/98d90d7a-38fa-4df4-90c3-3b9bd345c9af">
 
