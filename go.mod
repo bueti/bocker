@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/docker/docker v27.4.1+incompatible
 	github.com/mattn/go-isatty v0.0.20
-	github.com/muesli/termenv v0.15.2
+	github.com/muesli/termenv v0.16.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.1
 	github.com/zalando/go-keyring v0.2.6
@@ -65,7 +65,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gotest.tools/v3 v3.4.0 // indirect
 )
