@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/bubbletea v1.2.4
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.0
-	github.com/docker/docker v27.4.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/mattn/go-isatty v0.0.20
 	github.com/muesli/termenv v0.15.2
 	github.com/pkg/errors v0.9.1
