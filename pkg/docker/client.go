@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"bocker.software-services.dev/pkg/config"
@@ -22,6 +23,9 @@ type AuthResp struct {
 }
 
 func NewHTTPClient(app config.Application) (*HTTPClient, error) {
+	if strings.HasPrefix(app.Config.Docker.Password, "dckr_oat") {
+		return nil, fmt.Errorf("cannot use a docker organization token to list repositories")
+	}
 
 	c := http.Client{Timeout: 3 * time.Second}
 	path := "/v2/users/login"
