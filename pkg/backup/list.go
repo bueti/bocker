@@ -65,6 +65,7 @@ func List(app config.Application) error {
 	c, err := docker.NewHTTPClient(app)
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 
 	path := fmt.Sprintf("/v2/namespaces/%s/repositories/%s/tags", app.Config.Docker.Namespace, app.Config.Docker.Repository)
