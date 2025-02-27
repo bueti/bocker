@@ -64,7 +64,6 @@ type ListTagsResponse struct {
 func List(app config.Application) error {
 	c, err := docker.NewHTTPClient(app)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
