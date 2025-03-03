@@ -6,7 +6,7 @@ toolchain go1.23.2
 
 require (
 	github.com/adrg/xdg v0.5.3
-	github.com/charmbracelet/bubbletea v1.3.3
+	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.0
 	github.com/docker/docker v28.0.1+incompatible
