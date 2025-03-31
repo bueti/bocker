@@ -2,14 +2,12 @@ module bocker.software-services.dev
 
 go 1.23
 
-toolchain go1.23.2
-
 require (
 	github.com/adrg/xdg v0.5.3
 	github.com/charmbracelet/bubbletea v1.3.3
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.0
-	github.com/docker/docker v28.0.1+incompatible
+	github.com/docker/docker v28.0.4+incompatible
 	github.com/mattn/go-isatty v0.0.20
 	github.com/muesli/termenv v0.16.0
 	github.com/pkg/errors v0.9.1
