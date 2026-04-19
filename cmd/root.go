@@ -22,7 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"context"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
@@ -34,19 +37,23 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "bocker",
 		Short: "Create Postgresql backups and store them in Docker images",
-		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub. Of course, Bocker will also do the 
+		Long: `Bocker is a command line tool which creates a backup from a PostgreSQL database,
+wraps it in a Docker image, and uploads it to Docker Hub. Of course, Bocker will also do the
 reverse and restore your database from a backup in Docker Hub.`,
+		// Returned errors are already reported by Execute; skip cobra's usage
+		// banner so a failing pg_dump doesn't dump the full --help on the user.
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 )
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
+// Execute wires Ctrl+C into a cancellable context and runs the root command.
+// It returns whatever error the selected subcommand produced so main can decide
+// the exit code.
+func Execute() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return rootCmd.ExecuteContext(ctx)
 }
 
 func init() {

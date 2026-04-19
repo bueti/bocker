@@ -32,15 +32,23 @@ func startDeployCmd() tea.Msg {
 	return startDeployMsg{}
 }
 
-func (m *model) runStage() tea.Msg {
-	if !m.stages[m.stageIndex].IsCompleteFunc() {
-		// Run the current stage, and record its result status
-		m.stages[m.stageIndex].Error = m.stages[m.stageIndex].Action()
+// runStageCmd runs the given stage's Action on bubbletea's Cmd goroutine and
+// ferries the result back as a stageCompleteMsg. It does not touch model state
+// directly — that's Update's job — which is what lets View read the model
+// concurrently without a data race.
+func runStageCmd(stage Stage, idx int) tea.Cmd {
+	return func() tea.Msg {
+		if stage.IsCompleteFunc() {
+			return stageCompleteMsg{idx: idx}
+		}
+		return stageCompleteMsg{idx: idx, err: stage.Action()}
 	}
-	return stageCompleteMsg{}
 }
 
-type stageCompleteMsg struct{}
+type stageCompleteMsg struct {
+	idx int
+	err error
+}
 
 type errMsg struct{ err error }
 
@@ -55,23 +63,20 @@ func (m *model) Init() tea.Cmd {
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case stageCompleteMsg:
-		// If we have an error, then set the error so that the views can properly update
-		if m.stages[m.stageIndex].Error != nil {
-			m.Error = m.stages[m.stageIndex].Error
+		m.stages[msg.idx].Error = msg.err
+		if msg.err != nil {
+			m.Error = msg.err
 			logger.WriteCommandLogFile(m.Error)
 			return m, tea.Quit
 		}
-		// Otherwise, mark the current stage as complete and move to the next stage
-		m.stages[m.stageIndex].IsComplete = true
-		m.stages[m.stageIndex].IsActive = false
-		// If we've reached the end of the defined stages, we're done
+		m.stages[msg.idx].IsComplete = true
+		m.stages[msg.idx].IsActive = false
 		if m.stageIndex+1 >= len(m.stages) {
 			return m, tea.Quit
 		}
 		m.stageIndex++
-		// set next stage to active
 		m.stages[m.stageIndex].IsActive = true
-		return m, m.runStage
+		return m, runStageCmd(m.stages[m.stageIndex], m.stageIndex)
 
 	case errMsg:
 		m.Error = msg
@@ -84,7 +89,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case startDeployMsg:
 		m.stages[m.stageIndex].IsActive = true
-		return m, m.runStage
+		return m, runStageCmd(m.stages[m.stageIndex], m.stageIndex)
 	}
 
 	var spinnerCmd tea.Cmd

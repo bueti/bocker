@@ -1,25 +1,30 @@
 package tar
 
 import (
+	"context"
+	"fmt"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/pkg/errors"
+	"strings"
 )
 
-// Untar extracts a single file from a tar file.
-func Untar(tarFile, extractFile, dir string) error {
+// Untar extracts a single file from a tar file into dir.
+func Untar(ctx context.Context, tarFile, extractFile, dir string) error {
 	tarBin, err := exec.LookPath("tar")
-	if err == nil {
-		tarBin, _ = filepath.Abs(tarBin)
-	} else {
-		return err
+	if err != nil {
+		return fmt.Errorf("tar not found: %w", err)
 	}
-	unpackArgs := []string{"-xf", tarFile, extractFile}
-	unpackCmd := exec.Command(tarBin, unpackArgs...)
+	tarBin, _ = filepath.Abs(tarBin)
+
+	unpackCmd := exec.CommandContext(ctx, tarBin, "-xf", tarFile, extractFile)
 	unpackCmd.Dir = dir
-	if output, err := unpackCmd.CombinedOutput(); err != nil {
-		return errors.Wrap(err, string(output))
+	output, err := unpackCmd.CombinedOutput()
+	if err != nil {
+		out := strings.TrimSpace(string(output))
+		if out == "" {
+			return fmt.Errorf("tar failed: %w", err)
+		}
+		return fmt.Errorf("tar failed: %w: %s", err, out)
 	}
 	return nil
 }

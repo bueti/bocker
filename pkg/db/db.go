@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -31,14 +32,15 @@ func validateIdent(field, v string) error {
 // a container ID is configured. When PGPASSWORD is set in the caller's env,
 // it is forwarded into the container via `docker exec -e PGPASSWORD` (value
 // not on argv); on the host path, children inherit the env automatically.
-func buildCmd(containerID, tool string, args []string) (*exec.Cmd, error) {
+// ctx is propagated to exec.CommandContext so Ctrl+C cancels child processes.
+func buildCmd(ctx context.Context, containerID, tool string, args []string) (*exec.Cmd, error) {
 	if containerID == "" {
 		bin, err := exec.LookPath(tool)
 		if err != nil {
 			return nil, fmt.Errorf("%s not found: %w", tool, err)
 		}
 		bin, _ = filepath.Abs(bin)
-		return exec.Command(bin, args...), nil
+		return exec.CommandContext(ctx, bin, args...), nil
 	}
 
 	dockerBin, err := exec.LookPath("docker")
@@ -53,7 +55,7 @@ func buildCmd(containerID, tool string, args []string) (*exec.Cmd, error) {
 	}
 	dockerArgs = append(dockerArgs, "--", containerID, tool)
 	dockerArgs = append(dockerArgs, args...)
-	return exec.Command(dockerBin, dockerArgs...), nil
+	return exec.CommandContext(ctx, dockerBin, dockerArgs...), nil
 }
 
 // runCmd captures stderr, runs cmd, and wraps any non-zero exit with the
@@ -73,7 +75,7 @@ func runCmd(cmd *exec.Cmd, tool string) (string, error) {
 	return outb.String(), nil
 }
 
-func Dump(app config.Application) error {
+func Dump(ctx context.Context, app config.Application) error {
 	if err := validateIdent("db-source", app.Config.DB.SourceName); err != nil {
 		return err
 	}
@@ -90,7 +92,7 @@ func Dump(app config.Application) error {
 	}
 
 	args := []string{"-F", "c", "-U", app.Config.DB.User, "-h", app.Config.DB.Host, app.Config.DB.SourceName, "-f", backupFilePath}
-	cmd, err := buildCmd(app.Config.Docker.ContainerID, "pg_dump", args)
+	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "pg_dump", args)
 	if err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func Dump(app config.Application) error {
 	return err
 }
 
-func ExportRoles(app config.Application) error {
+func ExportRoles(ctx context.Context, app config.Application) error {
 	if err := validateIdent("db-user", app.Config.DB.User); err != nil {
 		return err
 	}
@@ -113,7 +115,7 @@ func ExportRoles(app config.Application) error {
 	}
 
 	args := []string{"-U", app.Config.DB.User, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath)}
-	cmd, err := buildCmd(app.Config.Docker.ContainerID, "pg_dumpall", args)
+	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "pg_dumpall", args)
 	if err != nil {
 		return err
 	}
@@ -121,7 +123,7 @@ func ExportRoles(app config.Application) error {
 	return err
 }
 
-func CreateDB(app config.Application) error {
+func CreateDB(ctx context.Context, app config.Application) error {
 	if err := validateIdent("db-target", app.Config.DB.TargetName); err != nil {
 		return err
 	}
@@ -135,7 +137,7 @@ func CreateDB(app config.Application) error {
 		app.Config.DB.TargetName, app.Config.DB.Owner)
 	args := []string{"-U", app.Config.DB.Owner, "-d", "postgres", "-c", stmt}
 
-	cmd, err := buildCmd(app.Config.Docker.ContainerID, "psql", args)
+	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "psql", args)
 	if err != nil {
 		return err
 	}
@@ -149,7 +151,7 @@ func CreateDB(app config.Application) error {
 	return nil
 }
 
-func Restore(app config.Application) error {
+func Restore(ctx context.Context, app config.Application) error {
 	if err := validateIdent("db-source", app.Config.DB.SourceName); err != nil {
 		return err
 	}
@@ -175,7 +177,7 @@ func Restore(app config.Application) error {
 		backupFile,
 	}
 
-	cmd, err := buildCmd(app.Config.Docker.ContainerID, "pg_restore", args)
+	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "pg_restore", args)
 	if err != nil {
 		return err
 	}

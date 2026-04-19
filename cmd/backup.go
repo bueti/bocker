@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"bocker.software-services.dev/pkg/tui"
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -31,8 +30,8 @@ import (
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup a Postgresql Database",
-	Long: `This command creates a Postgresql database backup with pg_dump. 
-The resulting file is wrapped in a Docker image. 
+	Long: `This command creates a Postgresql database backup with pg_dump.
+The resulting file is wrapped in a Docker image.
 Finally, this Docker image is uploaded to a Docker registy.
 
 Requires:
@@ -41,26 +40,21 @@ Requires:
 
 Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
-	Run: func(cmd *cobra.Command, args []string) {
-
-		err := tui.InitBackupTui(app)
-		if err != nil {
-			log.Fatal(err)
-		}
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return tui.InitBackupTui(cmd.Context(), app)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
 	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVarP(&app.Config.DB.Host, "db-host", "", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVar(&app.Config.DB.Host, "db-host", "localhost", "Hostname of the database host")
 	backupCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
 	backupCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
 	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
 	backupCmd.Flags().BoolVarP(&app.Config.DaemonMode, "daemon", "d", false, "Run in daemon mode (no TTY required)")
 
-	backupCmd.MarkFlagRequired("db-name")
-	backupCmd.MarkFlagRequired("db-user")
-	backupCmd.MarkFlagRequired("db-source")
-	rootCmd.MarkPersistentFlagRequired("repository")
+	_ = backupCmd.MarkFlagRequired("db-user")
+	_ = backupCmd.MarkFlagRequired("db-source")
+	_ = rootCmd.MarkPersistentFlagRequired("repository")
 }

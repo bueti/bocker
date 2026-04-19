@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -12,8 +13,10 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-func InitBackupTui(app *config.Application) error {
-	app = app.Setup()
+func InitBackupTui(ctx context.Context, app *config.Application) error {
+	if err := app.Setup(); err != nil {
+		return err
+	}
 	app.Config.Docker.Tag = app.Config.DB.DateTime
 	app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
@@ -29,8 +32,7 @@ func InitBackupTui(app *config.Application) error {
 		{
 			Name: "Creating Backup",
 			Action: func() error {
-				err := db.Dump(*app)
-				if err != nil {
+				if err := db.Dump(ctx, *app); err != nil {
 					logger.LogCommand("pg_dump failed")
 					logger.LogCommand(err.Error())
 					return err
@@ -38,45 +40,41 @@ func InitBackupTui(app *config.Application) error {
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Exporting Roles",
 			Action: func() error {
-				if app.Config.DB.ExportRoles {
-					err := db.ExportRoles(*app)
-					if err != nil {
-						logger.LogCommand("failed to export roles")
-						logger.LogCommand(err.Error())
-						return err
-					}
+				if !app.Config.DB.ExportRoles {
+					return nil
+				}
+				if err := db.ExportRoles(ctx, *app); err != nil {
+					logger.LogCommand("failed to export roles")
+					logger.LogCommand(err.Error())
+					return err
 				}
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Copy from Container",
 			Action: func() error {
-				if app.Config.Docker.ContainerID != "" {
-					err := docker.CopyFrom(*app)
-					if err != nil {
-						logger.LogCommand("failed to copy backup from container")
-						logger.LogCommand(err.Error())
-						return err
-					}
+				if app.Config.Docker.ContainerID == "" {
+					return nil
+				}
+				if err := docker.CopyFrom(ctx, *app); err != nil {
+					logger.LogCommand("failed to copy backup from container")
+					logger.LogCommand(err.Error())
+					return err
 				}
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Building Image",
 			Action: func() error {
-				err := docker.Build(*app)
-				if err != nil {
+				if err := docker.Build(ctx, *app); err != nil {
 					logger.LogCommand("failed to building image")
 					logger.LogCommand(err.Error())
 					return err
@@ -84,13 +82,11 @@ func InitBackupTui(app *config.Application) error {
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Pushing Image",
 			Action: func() error {
-				err := docker.Push(*app)
-				if err != nil {
+				if err := docker.Push(ctx, *app); err != nil {
 					logger.LogCommand("failed to push image")
 					logger.LogCommand(err.Error())
 					return err
@@ -98,7 +94,6 @@ func InitBackupTui(app *config.Application) error {
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 	}
 

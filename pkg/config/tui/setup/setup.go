@@ -38,6 +38,7 @@ func InitialModel() Model {
 		t.SetStyles(styles)
 		t.CharLimit = 255
 		t.Prompt = ""
+		t.SetWidth(78)
 
 		switch i {
 		case 0:

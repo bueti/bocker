@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -8,17 +9,19 @@ import (
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/db"
 	"bocker.software-services.dev/pkg/docker"
+	"bocker.software-services.dev/pkg/logger"
 	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/log"
 )
 
-func InitRestoreTui(app *config.Application) error {
-	app = app.Setup()
+func InitRestoreTui(ctx context.Context, app *config.Application) error {
+	if err := app.Setup(); err != nil {
+		return err
+	}
 	app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
 
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		log.Error(err)
+		return fmt.Errorf("create tmp dir: %w", err)
 	}
 	defer os.RemoveAll(tmpDir)
 	app.Config.TmpDir = tmpDir
@@ -27,96 +30,88 @@ func InitRestoreTui(app *config.Application) error {
 		{
 			Name: "Pull Backup Image",
 			Action: func() error {
-				err := docker.Pull(*app)
-				if err != nil {
-					log.Error("docker pull failed", "err", err)
+				if err := docker.Pull(ctx, *app); err != nil {
+					logger.LogCommand("docker pull failed")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Extracting backup from image",
 			Action: func() error {
-				err := docker.Unpack(*app)
-				if err != nil {
-					log.Error("failed to extract backup", "err", err)
+				if err := docker.Unpack(ctx, *app); err != nil {
+					logger.LogCommand("failed to extract backup")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Creating Database",
 			Action: func() error {
-				err := db.CreateDB(*app)
-				if err != nil {
-					log.Error("failed to create database", "err", err)
+				if err := db.CreateDB(ctx, *app); err != nil {
+					logger.LogCommand("failed to create database")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
 		},
 		{
 			Name: "Copy backup to container",
 			Action: func() error {
+				if app.Config.Docker.ContainerID == "" {
+					return nil
+				}
 				backupFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag))
-				if app.Config.Docker.ContainerID != "" {
-					err = docker.CopyTo(app.Config.Docker.ContainerID, backupFile)
-					if err != nil {
-						log.Error("failed to copy backup to container", "err", err)
-						return err
-					}
-				}
-				return nil
-			},
-			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
-		},
-		{
-			Name: "Import Roles",
-			Action: func() error {
-				if app.Config.DB.ImportRoles {
-					rolesFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.SourceName, app.Config.DB.DateTime))
-					if app.Config.Docker.ContainerID != "" {
-						err = docker.CopyTo(app.Config.Docker.ContainerID, rolesFile)
-						if err != nil {
-							log.Error("failed to import roles", "err", err)
-							return err
-						}
-					}
-				}
-				return nil
-			},
-			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
-		},
-		{
-			Name: "Restoring Database",
-			Action: func() error {
-				err := db.Restore(*app)
-				if err != nil {
-					log.Error("failed to restore database", "err", err)
+				if err := docker.CopyTo(ctx, app.Config.Docker.ContainerID, backupFile); err != nil {
+					logger.LogCommand("failed to copy backup to container")
+					logger.LogCommand(err.Error())
 					return err
 				}
 				return nil
 			},
 			IsCompleteFunc: func() bool { return false },
-			IsComplete:     false,
+		},
+		{
+			Name: "Import Roles",
+			Action: func() error {
+				if !app.Config.DB.ImportRoles || app.Config.Docker.ContainerID == "" {
+					return nil
+				}
+				rolesFile := filepath.Join(app.Config.TmpDir, fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.SourceName, app.Config.DB.DateTime))
+				if err := docker.CopyTo(ctx, app.Config.Docker.ContainerID, rolesFile); err != nil {
+					logger.LogCommand("failed to import roles")
+					logger.LogCommand(err.Error())
+					return err
+				}
+				return nil
+			},
+			IsCompleteFunc: func() bool { return false },
+		},
+		{
+			Name: "Restoring Database",
+			Action: func() error {
+				if err := db.Restore(ctx, *app); err != nil {
+					logger.LogCommand("failed to restore database")
+					logger.LogCommand(err.Error())
+					return err
+				}
+				return nil
+			},
+			IsCompleteFunc: func() bool { return false },
 		},
 	}
 
 	m := newModel(stages)
-	_, err = tea.NewProgram(&m).Run()
-	if err != nil {
-		return err
+	if _, err := tea.NewProgram(&m).Run(); err != nil {
+		return fmt.Errorf("failed to run restore tui: %w", err)
 	}
-
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 type APIClient struct {
-	docker client.Client
+	docker *client.Client
 }
 
 type Status struct {
@@ -27,8 +27,7 @@ func NewClient() (*APIClient, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return &APIClient{docker: *c}, nil
+	return &APIClient{docker: c}, nil
 }
 
 // Authentication returns a base64 encoded string of the docker username and password
