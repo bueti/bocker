@@ -155,12 +155,12 @@ func SetUsername(username string) error {
 	if err != nil {
 		return err
 	}
-	err = os.MkdirAll(fullPath, os.ModePerm)
+	err = os.MkdirAll(fullPath, 0700)
 	if err != nil {
 		return err
 	}
 
-	f, err := os.OpenFile(filepath.Join(fullPath, cfgFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(filepath.Join(fullPath, cfgFile), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}

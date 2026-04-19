@@ -4,18 +4,28 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/logger"
 	"bocker.software-services.dev/pkg/tar"
 	"github.com/docker/docker/api/types/image"
 )
+
+// wrapExecErr produces an error that carries the underlying *exec.ExitError
+// (so callers can inspect the exit code) plus trimmed stderr for context.
+func wrapExecErr(tool string, err error, stderr string) error {
+	stderr = strings.TrimSpace(stderr)
+	if stderr == "" {
+		return fmt.Errorf("%s failed: %w", tool, err)
+	}
+	return fmt.Errorf("%s failed: %w: %s", tool, err, stderr)
+}
 
 //go:embed "Dockerfile"
 var Dockerfile []byte
@@ -26,85 +36,83 @@ type DockerImage struct {
 	Layers   []string `json:"Layers"`
 }
 
+// dockerBin resolves an absolute path to the docker binary.
+func dockerBin() (string, error) {
+	bin, err := exec.LookPath("docker")
+	if err != nil {
+		return "", fmt.Errorf("docker not found: %w", err)
+	}
+	bin, _ = filepath.Abs(bin)
+	return bin, nil
+}
+
 // Copies a file from a running docker container to the app.Config.TmpDir
 func CopyFrom(app config.Application) error {
-	var outb, errb bytes.Buffer
 	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
-	dockerBin, err := exec.LookPath("docker")
-	if err == nil {
-		dockerBin, _ = filepath.Abs(dockerBin)
+	bin, err := dockerBin()
+	if err != nil {
+		return err
 	}
 
-	// docker cp ${DB_CONTAINER}:/${BACKUP_FILE_NAME} ${BACKUP_DIR}/
-	cpArgs := []string{"cp", app.Config.Docker.ContainerID + ":/var/tmp/" + app.Config.DB.BackupFileName, app.Config.TmpDir}
-	cpCmd := exec.Command(dockerBin, cpArgs...)
+	// docker cp -- <container>:/var/tmp/<file> <dest>
+	cpArgs := []string{"cp", "--", app.Config.Docker.ContainerID + ":/var/tmp/" + app.Config.DB.BackupFileName, app.Config.TmpDir}
+	var outb, errb bytes.Buffer
+	cpCmd := exec.Command(bin, cpArgs...)
 	cpCmd.Stdout = &outb
 	cpCmd.Stderr = &errb
-	err = cpCmd.Run()
-	if err != nil {
-		return errors.New(errb.String())
+	if err := cpCmd.Run(); err != nil {
+		return wrapExecErr("docker cp", err, errb.String())
 	}
 	return nil
 }
 
 // Copies a file to a running docker container to /var/tmp
 func CopyTo(container, filename string) error {
-	var outb, errb bytes.Buffer
-
-	dockerBin, err := exec.LookPath("docker")
-	if err == nil {
-		dockerBin, _ = filepath.Abs(dockerBin)
+	bin, err := dockerBin()
+	if err != nil {
+		return err
 	}
 
-	// docker cp <filename> <container id>:/var/tmp/<filename>
-	cpArgs := []string{"cp", filename, container + ":/var/tmp/"}
-	cpCmd := exec.Command(dockerBin, cpArgs...)
+	// docker cp -- <filename> <container>:/var/tmp/
+	cpArgs := []string{"cp", "--", filename, container + ":/var/tmp/"}
+	var outb, errb bytes.Buffer
+	cpCmd := exec.Command(bin, cpArgs...)
 	cpCmd.Stdout = &outb
 	cpCmd.Stderr = &errb
-	err = cpCmd.Run()
-	if err != nil {
-		return errors.New(errb.String())
+	if err := cpCmd.Run(); err != nil {
+		return wrapExecErr("docker cp", err, errb.String())
 	}
 	return nil
 }
 
 func Build(app config.Application) error {
-	var outb, errb bytes.Buffer
-
-	// write Dockerfile
 	dockerfilePath := filepath.Join(app.Config.TmpDir, "Dockerfile")
-	err := os.WriteFile(dockerfilePath, Dockerfile, 0755)
-	if err != nil {
-		return fmt.Errorf("unable to write file: %v", err)
+	if err := os.WriteFile(dockerfilePath, Dockerfile, 0600); err != nil {
+		return fmt.Errorf("unable to write Dockerfile: %w", err)
 	}
 
 	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
-	dockerBin, err := exec.LookPath("docker")
-	if err == nil {
-		dockerBin, _ = filepath.Abs(dockerBin)
+
+	bin, err := dockerBin()
+	if err != nil {
+		return err
 	}
 
-	var buildArgs []string
+	buildArgs := []string{"build",
+		"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
+	}
 	if app.Config.DB.ExportRoles {
-		buildArgs = []string{"build",
-			"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
-			"--build-arg", fmt.Sprintf("roles_file=%s", app.Config.DB.RolesFileName),
-			"-t", app.Config.Docker.ImagePath,
-			"-f", dockerfilePath, app.Config.TmpDir}
-	} else {
-		buildArgs = []string{"build",
-			"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
-			"-t", app.Config.Docker.ImagePath,
-			"-f", dockerfilePath, app.Config.TmpDir}
+		buildArgs = append(buildArgs, "--build-arg", fmt.Sprintf("roles_file=%s", app.Config.DB.RolesFileName))
 	}
+	buildArgs = append(buildArgs, "-t", app.Config.Docker.ImagePath, "-f", dockerfilePath, app.Config.TmpDir)
 
-	buildCmd := exec.Command(dockerBin, buildArgs...)
+	var outb, errb bytes.Buffer
+	buildCmd := exec.Command(bin, buildArgs...)
 	buildCmd.Stdout = &outb
 	buildCmd.Stderr = &errb
-	err = buildCmd.Run()
-	if err != nil {
-		return errors.New(errb.String())
+	if err := buildCmd.Run(); err != nil {
+		return wrapExecErr("docker build", err, errb.String())
 	}
 	return nil
 }
