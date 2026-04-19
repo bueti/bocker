@@ -54,6 +54,13 @@ export DOCKER_PASSWORD=<your docker password>
 
 `bocker` will prefer environment variables over the keyring.
 
+To inspect the stored configuration:
+
+```sh
+bocker config list                  # shows the username; password is hidden
+bocker config list --show-password  # also prints the stored password
+```
+
 ![bocker config](https://vhs.charm.sh/vhs-6w65TVtSWeJqk5oGv5N9cp.gif)
 
 ### List existing backups
@@ -68,32 +75,23 @@ bocker backup list -n <namespace> -r <repository>
 
 ### Restore backup
 
-To restore a database you'll need supply a few parameters:
-```shell
-$ bocker restore -h
-
-Restores a Postgres database
-
-Usage:
-  bocker restore [flags]
-
-Flags:
-  -c, --container-id string   ID of container running PostgreSQL
-      --db-host string        Hostname of the database host (default "localhost")
-  -o, --db-owner string       Database user
-  -s, --db-source string      Source database name
-  -t, --db-target string      Target database name
-  -h, --help                  help for restore
-      --import-roles          Create roles from backup
-  -n, --namespace string      Docker Namespace (default "bueti")
-  -r, --repository string     Docker Repository
-      --tag string            Tag of the image with the backup in it
-```
-
 ```sh
 bocker restore -r greenlight_backup -o postgres -s greenlight -t greenlight_test --tag 2023-02-14_21-11-43
 ```
+
+Run `bocker restore -h` for the full list of flags.
+
 ![Made with VHS](https://vhs.charm.sh/vhs-3tyELWQdiy2wxPcDn1391H.gif)
+
+### Database passwords
+
+For the host path (no `--container-id`), `pg_dump` / `pg_restore` / `psql` inherit the caller's environment, so setting `PGPASSWORD` (or having a `~/.pgpass`) before running `bocker` works as usual.
+
+When `--container-id` is set, `bocker` runs the Postgres tools inside the container via `docker exec`. If `PGPASSWORD` is exported in your shell, it is forwarded with `docker exec -e PGPASSWORD` so the value stays off argv.
+
+### Cancellation
+
+Ctrl+C cancels the in-flight operation — the Docker push, the image pull, or the running `pg_*` subprocess — instead of letting them finish.
 
 ### More
 There are some assumptions made:
@@ -105,24 +103,7 @@ There are some assumptions made:
 Use `-h` to get help for each subcommand:
 
 ```sh
-$ bocker --help
-Bocker is a command line tool which creates a backup from a PostgreSQL database, 
-wraps it in a Docker image, and uploads it to Docker Hub.  Of course, Bocker will also do the 
-reverse and restore your database from a backup in Docker Hub.
-
-Usage:
-  bocker [command]
-
-Available Commands:
-  backup      Backup a Postgresql Database
-  completion  Generate the autocompletion script for the specified shell
-  help        Help about any command
-  restore     Restores a Posgres database
-
-Flags:
-  -h, --help                help for bocker
-  -n, --namespace string    Docker Namespace (default "bueti")
-  -r, --repository string   Docker Repository
-
-Use "bocker [command] --help" for more information about a command.
+bocker --help
+bocker backup --help
+bocker restore --help
 ```
