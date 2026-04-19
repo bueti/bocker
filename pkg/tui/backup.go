@@ -19,6 +19,8 @@ func InitBackupTui(ctx context.Context, app *config.Application) error {
 	}
 	app.Config.Docker.Tag = app.Config.DB.DateTime
 	app.Config.Docker.ImagePath = fmt.Sprintf("%s/%s:%s", app.Config.Docker.Namespace, app.Config.Docker.Repository, app.Config.Docker.Tag)
+	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
+	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -32,7 +34,7 @@ func InitBackupTui(ctx context.Context, app *config.Application) error {
 		{
 			Name: "Creating Backup",
 			Action: func() error {
-				if err := db.Dump(ctx, *app); err != nil {
+				if err := db.Dump(ctx, app); err != nil {
 					logger.LogCommand("pg_dump failed")
 					logger.LogCommand(err.Error())
 					return err
@@ -47,7 +49,7 @@ func InitBackupTui(ctx context.Context, app *config.Application) error {
 				if !app.Config.DB.ExportRoles {
 					return nil
 				}
-				if err := db.ExportRoles(ctx, *app); err != nil {
+				if err := db.ExportRoles(ctx, app); err != nil {
 					logger.LogCommand("failed to export roles")
 					logger.LogCommand(err.Error())
 					return err
@@ -62,7 +64,7 @@ func InitBackupTui(ctx context.Context, app *config.Application) error {
 				if app.Config.Docker.ContainerID == "" {
 					return nil
 				}
-				if err := docker.CopyFrom(ctx, *app); err != nil {
+				if err := docker.CopyFrom(ctx, app); err != nil {
 					logger.LogCommand("failed to copy backup from container")
 					logger.LogCommand(err.Error())
 					return err
@@ -74,7 +76,7 @@ func InitBackupTui(ctx context.Context, app *config.Application) error {
 		{
 			Name: "Building Image",
 			Action: func() error {
-				if err := docker.Build(ctx, *app); err != nil {
+				if err := docker.Build(ctx, app); err != nil {
 					logger.LogCommand("failed to building image")
 					logger.LogCommand(err.Error())
 					return err
@@ -86,7 +88,7 @@ func InitBackupTui(ctx context.Context, app *config.Application) error {
 		{
 			Name: "Pushing Image",
 			Action: func() error {
-				if err := docker.Push(ctx, *app); err != nil {
+				if err := docker.Push(ctx, app); err != nil {
 					logger.LogCommand("failed to push image")
 					logger.LogCommand(err.Error())
 					return err

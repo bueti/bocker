@@ -34,7 +34,7 @@ var listCmd = &cobra.Command{
 		if err := app.Setup(); err != nil {
 			return err
 		}
-		return backup.List(cmd.Context(), *app)
+		return backup.List(cmd.Context(), app)
 	},
 }
 

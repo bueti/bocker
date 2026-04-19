@@ -75,7 +75,23 @@ func runCmd(cmd *exec.Cmd, tool string) (string, error) {
 	return outb.String(), nil
 }
 
-func Dump(ctx context.Context, app config.Application) error {
+// backupPath returns where the backup file lives: /var/tmp inside the
+// container, or the caller's TmpDir on the host.
+func backupPath(app *config.Application) string {
+	if app.Config.Docker.ContainerID != "" {
+		return filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
+	}
+	return filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
+}
+
+func rolesPath(app *config.Application) string {
+	if app.Config.Docker.ContainerID != "" {
+		return filepath.Join("/var/tmp", app.Config.DB.RolesFileName)
+	}
+	return filepath.Join(app.Config.TmpDir, app.Config.DB.RolesFileName)
+}
+
+func Dump(ctx context.Context, app *config.Application) error {
 	if err := validateIdent("db-source", app.Config.DB.SourceName); err != nil {
 		return err
 	}
@@ -83,15 +99,13 @@ func Dump(ctx context.Context, app config.Application) error {
 		return err
 	}
 
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
-	var backupFilePath string
-	if app.Config.Docker.ContainerID != "" {
-		backupFilePath = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
-	} else {
-		backupFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
+	args := []string{
+		"-F", "c",
+		"-U", app.Config.DB.User,
+		"-h", app.Config.DB.Host,
+		app.Config.DB.SourceName,
+		"-f", backupPath(app),
 	}
-
-	args := []string{"-F", "c", "-U", app.Config.DB.User, "-h", app.Config.DB.Host, app.Config.DB.SourceName, "-f", backupFilePath}
 	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "pg_dump", args)
 	if err != nil {
 		return err
@@ -100,21 +114,16 @@ func Dump(ctx context.Context, app config.Application) error {
 	return err
 }
 
-func ExportRoles(ctx context.Context, app config.Application) error {
+func ExportRoles(ctx context.Context, app *config.Application) error {
 	if err := validateIdent("db-user", app.Config.DB.User); err != nil {
 		return err
 	}
 
-	app.Config.DB.RolesFileName = fmt.Sprintf("%s_%s_roles_backup.sql", app.Config.DB.SourceName, app.Config.DB.DateTime)
-
-	var rolesFilePath string
-	if app.Config.Docker.ContainerID != "" {
-		rolesFilePath = filepath.Join("/var/tmp/", app.Config.DB.RolesFileName)
-	} else {
-		rolesFilePath = filepath.Join(app.Config.TmpDir, app.Config.DB.RolesFileName)
+	args := []string{
+		"-U", app.Config.DB.User,
+		"--clean", "--if-exists", "--no-comments", "--globals-only",
+		"--file=" + rolesPath(app),
 	}
-
-	args := []string{"-U", app.Config.DB.User, "--clean", "--if-exists", "--no-comments", "--globals-only", fmt.Sprintf("--file=%s", rolesFilePath)}
 	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "pg_dumpall", args)
 	if err != nil {
 		return err
@@ -123,7 +132,7 @@ func ExportRoles(ctx context.Context, app config.Application) error {
 	return err
 }
 
-func CreateDB(ctx context.Context, app config.Application) error {
+func CreateDB(ctx context.Context, app *config.Application) error {
 	if err := validateIdent("db-target", app.Config.DB.TargetName); err != nil {
 		return err
 	}
@@ -151,7 +160,7 @@ func CreateDB(ctx context.Context, app config.Application) error {
 	return nil
 }
 
-func Restore(ctx context.Context, app config.Application) error {
+func Restore(ctx context.Context, app *config.Application) error {
 	if err := validateIdent("db-source", app.Config.DB.SourceName); err != nil {
 		return err
 	}
@@ -162,19 +171,11 @@ func Restore(ctx context.Context, app config.Application) error {
 		return err
 	}
 
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag)
-	var backupFile string
-	if app.Config.Docker.ContainerID != "" {
-		backupFile = filepath.Join("/var/tmp", app.Config.DB.BackupFileName)
-	} else {
-		backupFile = filepath.Join(app.Config.TmpDir, app.Config.DB.BackupFileName)
-	}
-
 	args := []string{
 		"-U", app.Config.DB.Owner, "-F", "c", "-c", "-v",
-		fmt.Sprintf("--dbname=%s", app.Config.DB.TargetName),
+		"--dbname=" + app.Config.DB.TargetName,
 		"-h", app.Config.DB.Host,
-		backupFile,
+		backupPath(app),
 	}
 
 	cmd, err := buildCmd(ctx, app.Config.Docker.ContainerID, "pg_restore", args)

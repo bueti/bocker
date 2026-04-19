@@ -60,7 +60,7 @@ type ListTagsResponse struct {
 	Results  []Response `json:"results"`
 }
 
-func List(ctx context.Context, app config.Application) error {
+func List(ctx context.Context, app *config.Application) error {
 	c, err := docker.NewHTTPClient(app)
 	if err != nil {
 		return err
