@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"bocker.software-services.dev/pkg/logger"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type Stage struct {
@@ -77,8 +77,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Error = msg
 		return m, tea.Quit
 
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
+	case tea.KeyPressMsg:
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
 
@@ -92,13 +92,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, spinnerCmd
 }
 
-func (m *model) View() string {
+func (m *model) View() tea.View {
 	sb := strings.Builder{}
 
 	for _, stage := range m.stages {
 		sb.WriteString(renderCheckbox(stage) + " " + renderWorkingStatus(*m, stage) + "\n")
 	}
-	return sb.String()
+	return tea.NewView(sb.String())
 }
 
 func newModel(stages []Stage) model {

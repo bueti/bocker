@@ -12,8 +12,8 @@ import (
 	"bocker.software-services.dev/pkg/backup/tui"
 	"bocker.software-services.dev/pkg/config"
 	"bocker.software-services.dev/pkg/docker"
-	"github.com/charmbracelet/bubbles/table"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/table"
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/log"
 )
 
