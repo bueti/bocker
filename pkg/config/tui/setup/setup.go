@@ -38,6 +38,10 @@ func InitialModel() Model {
 		t.SetStyles(styles)
 		t.CharLimit = 255
 		t.Prompt = ""
+		// bubbles v2 truncates the placeholder to one rune when Width is 0
+		// (see textinput.placeholderView). The surrounding border is 80 wide,
+		// so match it.
+		t.SetWidth(78)
 
 		switch i {
 		case 0:
