@@ -29,6 +29,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var showPassword bool
+
 var configListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List Registry Configuration",
@@ -38,16 +40,22 @@ var configListCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		fmt.Printf("Username: %s\n", cfg.Username)
+
+		if !showPassword {
+			fmt.Println("Password: (hidden; pass --show-password to reveal)")
+			return
+		}
+
 		password, err := config.GetKey(config.AppName)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Printf("Username: %s\nPassword: %s\n", cfg.Username, password)
-
+		fmt.Printf("Password: %s\n", password)
 	},
 }
 
 func init() {
 	configCmd.AddCommand(configListCmd)
+	configListCmd.Flags().BoolVar(&showPassword, "show-password", false, "Print the stored Docker Hub password to stdout")
 }

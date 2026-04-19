@@ -27,7 +27,7 @@ func NewHTTPClient(app config.Application) (*HTTPClient, error) {
 		return nil, fmt.Errorf("cannot use a docker organization token to list repositories")
 	}
 
-	c := http.Client{Timeout: 3 * time.Second}
+	c := http.Client{Timeout: 30 * time.Second}
 	path := "/v2/users/login"
 	body := struct {
 		Username string `json:"username"`
@@ -50,23 +50,22 @@ func NewHTTPClient(app config.Application) (*HTTPClient, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		if res.StatusCode == 401 {
+	if res.StatusCode != http.StatusOK {
+		if res.StatusCode == http.StatusUnauthorized {
 			return nil, fmt.Errorf("authentication failed, status code: %d", res.StatusCode)
-		} else {
-			return nil, fmt.Errorf("docker API error, status code: %d", res.StatusCode)
 		}
+		return nil, fmt.Errorf("docker API error, status code: %d", res.StatusCode)
 	}
-	decoder := json.NewDecoder(res.Body)
+
 	resp := &AuthResp{}
-	err = decoder.Decode(resp)
-	if err != nil {
+	if err := json.NewDecoder(res.Body).Decode(resp); err != nil {
 		return nil, err
 	}
 
 	return &HTTPClient{
-		httpClient: http.Client{Timeout: 3 * time.Second},
+		httpClient: c,
 		token:      resp.Token,
 		apiHost:    app.Config.Docker.Host,
 	}, nil
