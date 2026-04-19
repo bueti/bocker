@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"bocker.software-services.dev/pkg/tui"
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -31,11 +30,8 @@ import (
 var restoreCmd = &cobra.Command{
 	Use:   "restore",
 	Short: "Restore a Postgresql database",
-	Run: func(cmd *cobra.Command, args []string) {
-		err := tui.InitRestoreTui(app)
-		if err != nil {
-			log.Fatal(err)
-		}
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return tui.InitRestoreTui(cmd.Context(), app)
 	},
 }
 
@@ -50,9 +46,9 @@ func init() {
 	restoreCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
 	restoreCmd.Flags().BoolVar(&app.Config.DB.ImportRoles, "import-roles", false, "Create roles from backup")
 
-	restoreCmd.MarkFlagRequired("tag")
-	restoreCmd.MarkFlagRequired("db-owner")
-	restoreCmd.MarkFlagRequired("db-source")
-	restoreCmd.MarkFlagRequired("db-target")
-	rootCmd.MarkPersistentFlagRequired("repository")
+	_ = restoreCmd.MarkFlagRequired("tag")
+	_ = restoreCmd.MarkFlagRequired("db-owner")
+	_ = restoreCmd.MarkFlagRequired("db-source")
+	_ = restoreCmd.MarkFlagRequired("db-target")
+	_ = rootCmd.MarkPersistentFlagRequired("repository")
 }

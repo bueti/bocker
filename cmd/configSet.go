@@ -23,8 +23,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"os"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
@@ -33,24 +31,17 @@ import (
 var configSetCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Set Registry Configuration",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if username == "" || password == "" {
-			err := config.ConfigTui()
-			if err != nil {
-				fmt.Printf("could not start bocker: %s\n", err)
-				os.Exit(1)
+			if err := config.ConfigTui(); err != nil {
+				return fmt.Errorf("could not start bocker: %w", err)
 			}
-		} else {
-			err := config.SetUsername(username)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			err = config.SetKey(config.AppName, password)
-			if err != nil {
-				log.Fatal(err)
-			}
+			return nil
 		}
+		if err := config.SetUsername(username); err != nil {
+			return err
+		}
+		return config.SetKey(config.AppName, password)
 	},
 }
 

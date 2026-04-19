@@ -21,8 +21,16 @@ THE SOFTWARE.
 */
 package main
 
-import "bocker.software-services.dev/cmd"
+import (
+	"fmt"
+	"os"
+
+	"bocker.software-services.dev/cmd"
+)
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
 }

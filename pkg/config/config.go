@@ -1,8 +1,8 @@
 package config
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -10,7 +10,6 @@ import (
 	tui "bocker.software-services.dev/pkg/config/tui/setup"
 	tea "charm.land/bubbletea/v2"
 	"github.com/adrg/xdg"
-	"github.com/charmbracelet/log"
 	"github.com/zalando/go-keyring"
 	"gopkg.in/yaml.v3"
 )
@@ -42,7 +41,6 @@ type config struct {
 		ImportRoles    bool
 	}
 	TmpDir     string
-	Context    context.Context
 	DaemonMode bool
 }
 
@@ -54,60 +52,52 @@ type Username struct {
 	Username string `yaml:"username,omitempty"`
 }
 
-func (app Application) Setup() *Application {
+// Setup populates runtime fields (credentials, Docker host, timestamp) on the
+// Application. It mutates the receiver; call on a *Application shared with the
+// rest of the program.
+func (app *Application) Setup() error {
 	cfg, err := GetUsername()
 	if err != nil {
-		log.Fatal("Can't read configuration. Try running `bocker config` to fix the issue.", "err", err)
+		return fmt.Errorf("read config: %w (try running `bocker config` to fix)", err)
 	}
-
 	if cfg.Username == "" {
-		log.Fatal("Username not set. Run `bocker config` first.")
+		return errors.New("username not set; run `bocker config` first")
 	}
 	app.Config.Docker.Username = cfg.Username
 
 	app.Config.Docker.Password, err = GetKey(AppName)
 	if err != nil {
-		os.Exit(1)
+		return fmt.Errorf("read keyring: %w", err)
 	}
 
-	host, ok := os.LookupEnv("DOCKER_HOST")
-	if !ok {
-		app.Config.Docker.Host = "https://hub.docker.com"
-	} else {
+	if host, ok := os.LookupEnv("DOCKER_HOST"); ok {
 		app.Config.Docker.Host = host
+	} else {
+		app.Config.Docker.Host = "https://hub.docker.com"
 	}
 
-	dt := time.Now()
-	app.Config.DB.DateTime = dt.Format("2006-01-02_15-04-05")
-	app.Config.Context = context.Background()
-
-	return &app
+	app.Config.DB.DateTime = time.Now().Format("2006-01-02_15-04-05")
+	return nil
 }
 
 // SetKey creates a new entry in the OS keyring
 func SetKey(service, secret string) error {
-	err := keyring.Set(service, AppName, secret)
-	if err != nil {
-		log.Error("failed to fetch secret", "err", err)
-		return err
+	if err := keyring.Set(service, AppName, secret); err != nil {
+		return fmt.Errorf("keyring set: %w", err)
 	}
-
 	return nil
 }
 
 // GetKey retrieves a key from the OS keyring
 func GetKey(service string) (string, error) {
-	if os.Getenv("DOCKER_PASSWORD") != "" {
-		return os.Getenv("DOCKER_PASSWORD"), nil
+	if pw := os.Getenv("DOCKER_PASSWORD"); pw != "" {
+		return pw, nil
 	}
 
-	// get password
 	secret, err := keyring.Get(service, AppName)
 	if err != nil {
-		log.Error("failed to fetch key", "err", err)
-		return "", err
+		return "", fmt.Errorf("keyring get: %w", err)
 	}
-
 	return secret, nil
 }
 

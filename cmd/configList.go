@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"bocker.software-services.dev/pkg/config"
 	"github.com/spf13/cobra"
@@ -34,24 +33,24 @@ var showPassword bool
 var configListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List Registry Configuration",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.GetUsername()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-
 		fmt.Printf("Username: %s\n", cfg.Username)
 
 		if !showPassword {
 			fmt.Println("Password: (hidden; pass --show-password to reveal)")
-			return
+			return nil
 		}
 
 		password, err := config.GetKey(config.AppName)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		fmt.Printf("Password: %s\n", password)
+		return nil
 	},
 }
 

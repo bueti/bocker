@@ -2,6 +2,7 @@ package docker
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -71,9 +72,10 @@ func NewHTTPClient(app config.Application) (*HTTPClient, error) {
 	}, nil
 }
 
-// DoRequest makes a request to the Docker Hub API, caller is responsible to close response body
-func (c *HTTPClient) DoRequest(method, path string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, c.apiHost+path, body)
+// DoRequest makes a request to the Docker Hub API; the caller is responsible
+// for closing the response body.
+func (c *HTTPClient) DoRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, c.apiHost+path, body)
 	if err != nil {
 		return nil, err
 	}

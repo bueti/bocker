@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"bocker.software-services.dev/pkg/backup"
-	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 
@@ -31,18 +30,15 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available backups",
-	Run: func(cmd *cobra.Command, args []string) {
-		app := app.Setup()
-
-		err := backup.List(*app)
-		if err != nil {
-			log.Error(err)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := app.Setup(); err != nil {
+			return err
 		}
-
+		return backup.List(cmd.Context(), *app)
 	},
 }
 
 func init() {
 	backupCmd.AddCommand(listCmd)
-	rootCmd.MarkPersistentFlagRequired("repository")
+	_ = rootCmd.MarkPersistentFlagRequired("repository")
 }
