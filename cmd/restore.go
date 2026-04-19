@@ -26,11 +26,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// restoreCmd represents the restore command
+var restoreOpts struct {
+	DBOwner, DBSource, DBTarget, DBHost, Tag, ContainerID string
+	ImportRoles                                           bool
+}
+
 var restoreCmd = &cobra.Command{
 	Use:   "restore",
 	Short: "Restore a Postgresql database",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		app.Config.DB.Owner = restoreOpts.DBOwner
+		app.Config.DB.SourceName = restoreOpts.DBSource
+		app.Config.DB.TargetName = restoreOpts.DBTarget
+		app.Config.DB.Host = restoreOpts.DBHost
+		app.Config.Docker.Tag = restoreOpts.Tag
+		app.Config.Docker.ContainerID = restoreOpts.ContainerID
+		app.Config.DB.ImportRoles = restoreOpts.ImportRoles
 		return tui.InitRestoreTui(cmd.Context(), app)
 	},
 }
@@ -38,13 +49,13 @@ var restoreCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(restoreCmd)
 
-	restoreCmd.Flags().StringVarP(&app.Config.DB.Owner, "db-owner", "o", "", "Database user ")
-	restoreCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
-	restoreCmd.Flags().StringVarP(&app.Config.DB.TargetName, "db-target", "t", "", "Target database name")
-	restoreCmd.Flags().StringVar(&app.Config.DB.Host, "db-host", "localhost", "Hostname of the database host")
-	restoreCmd.Flags().StringVar(&app.Config.Docker.Tag, "tag", "", "Tag of the image with the backup in it")
-	restoreCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
-	restoreCmd.Flags().BoolVar(&app.Config.DB.ImportRoles, "import-roles", false, "Create roles from backup")
+	restoreCmd.Flags().StringVarP(&restoreOpts.DBOwner, "db-owner", "o", "", "Database user ")
+	restoreCmd.Flags().StringVarP(&restoreOpts.DBSource, "db-source", "s", "", "Source database name")
+	restoreCmd.Flags().StringVarP(&restoreOpts.DBTarget, "db-target", "t", "", "Target database name")
+	restoreCmd.Flags().StringVar(&restoreOpts.DBHost, "db-host", "localhost", "Hostname of the database host")
+	restoreCmd.Flags().StringVar(&restoreOpts.Tag, "tag", "", "Tag of the image with the backup in it")
+	restoreCmd.Flags().StringVarP(&restoreOpts.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
+	restoreCmd.Flags().BoolVar(&restoreOpts.ImportRoles, "import-roles", false, "Create roles from backup")
 
 	_ = restoreCmd.MarkFlagRequired("tag")
 	_ = restoreCmd.MarkFlagRequired("db-owner")

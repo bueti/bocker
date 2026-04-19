@@ -23,7 +23,7 @@ type AuthResp struct {
 	Token string
 }
 
-func NewHTTPClient(app config.Application) (*HTTPClient, error) {
+func NewHTTPClient(app *config.Application) (*HTTPClient, error) {
 	if strings.HasPrefix(app.Config.Docker.Password, "dckr_oat") {
 		return nil, fmt.Errorf("cannot use a docker organization token to list repositories")
 	}

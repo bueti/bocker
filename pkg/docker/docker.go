@@ -31,7 +31,7 @@ func wrapExecErr(tool string, err error, stderr string) error {
 //go:embed "Dockerfile"
 var Dockerfile []byte
 
-type DockerImage struct {
+type Image struct {
 	Config   string   `json:"Config"`
 	RepoTags []string `json:"RepoTags"`
 	Layers   []string `json:"Layers"`
@@ -47,10 +47,9 @@ func dockerBin() (string, error) {
 	return bin, nil
 }
 
-// Copies a file from a running docker container to the app.Config.TmpDir
-func CopyFrom(ctx context.Context, app config.Application) error {
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
-
+// CopyFrom copies the backup file out of the running Postgres container into
+// app.Config.TmpDir.
+func CopyFrom(ctx context.Context, app *config.Application) error {
 	bin, err := dockerBin()
 	if err != nil {
 		return err
@@ -87,13 +86,11 @@ func CopyTo(ctx context.Context, container, filename string) error {
 	return nil
 }
 
-func Build(ctx context.Context, app config.Application) error {
+func Build(ctx context.Context, app *config.Application) error {
 	dockerfilePath := filepath.Join(app.Config.TmpDir, "Dockerfile")
 	if err := os.WriteFile(dockerfilePath, Dockerfile, 0600); err != nil {
 		return fmt.Errorf("unable to write Dockerfile: %w", err)
 	}
-
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.DB.DateTime)
 
 	bin, err := dockerBin()
 	if err != nil {
@@ -101,10 +98,10 @@ func Build(ctx context.Context, app config.Application) error {
 	}
 
 	buildArgs := []string{"build",
-		"--build-arg", fmt.Sprintf("backup_file=%s", app.Config.DB.BackupFileName),
+		"--build-arg", "backup_file=" + app.Config.DB.BackupFileName,
 	}
 	if app.Config.DB.ExportRoles {
-		buildArgs = append(buildArgs, "--build-arg", fmt.Sprintf("roles_file=%s", app.Config.DB.RolesFileName))
+		buildArgs = append(buildArgs, "--build-arg", "roles_file="+app.Config.DB.RolesFileName)
 	}
 	buildArgs = append(buildArgs, "-t", app.Config.Docker.ImagePath, "-f", dockerfilePath, app.Config.TmpDir)
 
@@ -118,7 +115,7 @@ func Build(ctx context.Context, app config.Application) error {
 	return nil
 }
 
-func Push(ctx context.Context, app config.Application) error {
+func Push(ctx context.Context, app *config.Application) error {
 	c, err := NewClient()
 	if err != nil {
 		return err
@@ -139,7 +136,7 @@ func Push(ctx context.Context, app config.Application) error {
 	return c.ParseOutput(out)
 }
 
-func Pull(ctx context.Context, app config.Application) error {
+func Pull(ctx context.Context, app *config.Application) error {
 	c, err := NewClient()
 	if err != nil {
 		return err
@@ -160,7 +157,7 @@ func Pull(ctx context.Context, app config.Application) error {
 	return c.ParseOutput(out)
 }
 
-func Save(ctx context.Context, app config.Application, outputFile string) (string, error) {
+func Save(ctx context.Context, app *config.Application, outputFile string) (string, error) {
 	outputFilePath := filepath.Join(app.Config.TmpDir, outputFile)
 
 	c, err := NewClient()
@@ -187,14 +184,13 @@ func Save(ctx context.Context, app config.Application, outputFile string) (strin
 	return outputFilePath, nil
 }
 
-func Unpack(ctx context.Context, app config.Application) error {
+func Unpack(ctx context.Context, app *config.Application) error {
 	outputFile := "output.tar"
 	outputFilePath, err := Save(ctx, app, outputFile)
 	if err != nil {
 		return err
 	}
 
-	// unpack layer
 	manifestFile := "manifest.json"
 	if err := tar.Untar(ctx, outputFilePath, manifestFile, app.Config.TmpDir); err != nil {
 		logger.LogCommand("Couldn't unpack file")
@@ -202,12 +198,11 @@ func Unpack(ctx context.Context, app config.Application) error {
 		return err
 	}
 
-	// read manifest.json and extract layer with backup in it
 	file, err := os.ReadFile(filepath.Join(app.Config.TmpDir, manifestFile))
 	if err != nil {
 		return err
 	}
-	var manifest []DockerImage
+	var manifest []Image
 	if err := json.Unmarshal(file, &manifest); err != nil {
 		return err
 	}
@@ -219,7 +214,5 @@ func Unpack(ctx context.Context, app config.Application) error {
 	if err := tar.Untar(ctx, filepath.Join(app.Config.TmpDir, outputFile), backupLayerTar, app.Config.TmpDir); err != nil {
 		return err
 	}
-
-	app.Config.DB.BackupFileName = fmt.Sprintf("%s_%s_backup.psql", app.Config.DB.SourceName, app.Config.Docker.Tag)
 	return tar.Untar(ctx, filepath.Join(app.Config.TmpDir, backupLayerTar), app.Config.DB.BackupFileName, app.Config.TmpDir)
 }

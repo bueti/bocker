@@ -66,7 +66,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.stages[msg.idx].Error = msg.err
 		if msg.err != nil {
 			m.Error = msg.err
-			logger.WriteCommandLogFile(m.Error)
+			_, _ = logger.WriteCommandLogFile(m.Error)
 			return m, tea.Quit
 		}
 		m.stages[msg.idx].IsComplete = true
@@ -110,7 +110,7 @@ func newModel(stages []Stage) model {
 	s := spinner.New()
 	clock := spinner.Spinner{
 		Frames: []string{"🕐 ", "🕑 ", "🕒 ", "🕓 ", "🕔 ", "🕕 ", "🕖 ", "🕗 ", "🕘 ", "🕙 ", "🕚 ", "🕛 "},
-		FPS:    time.Second / 8, //nolint:gomnd
+		FPS:    time.Second / 8, //nolint:mnd
 	}
 	s.Spinner = clock
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))

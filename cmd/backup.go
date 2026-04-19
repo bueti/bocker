@@ -26,7 +26,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// backupCmd represents the backup command
+// backupOpts holds the backup-subcommand's own flag state so it can't collide
+// with restore's bindings to the same config fields.
+var backupOpts struct {
+	DBUser, DBHost, DBSource, ContainerID string
+	ExportRoles, DaemonMode               bool
+}
+
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup a Postgresql Database",
@@ -41,18 +47,24 @@ Requires:
 Example:
 bocker -H <host> -n <db name> -u <db user> -o <output file name>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		app.Config.DB.User = backupOpts.DBUser
+		app.Config.DB.Host = backupOpts.DBHost
+		app.Config.DB.SourceName = backupOpts.DBSource
+		app.Config.Docker.ContainerID = backupOpts.ContainerID
+		app.Config.DB.ExportRoles = backupOpts.ExportRoles
+		app.Config.DaemonMode = backupOpts.DaemonMode
 		return tui.InitBackupTui(cmd.Context(), app)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(backupCmd)
-	backupCmd.Flags().StringVarP(&app.Config.DB.User, "db-user", "u", "", "Database user name (required)")
-	backupCmd.Flags().StringVar(&app.Config.DB.Host, "db-host", "localhost", "Hostname of the database host")
-	backupCmd.Flags().StringVarP(&app.Config.DB.SourceName, "db-source", "s", "", "Source database name")
-	backupCmd.Flags().StringVarP(&app.Config.Docker.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
-	backupCmd.Flags().BoolVar(&app.Config.DB.ExportRoles, "export-roles", false, "Include roles in backup")
-	backupCmd.Flags().BoolVarP(&app.Config.DaemonMode, "daemon", "d", false, "Run in daemon mode (no TTY required)")
+	backupCmd.Flags().StringVarP(&backupOpts.DBUser, "db-user", "u", "", "Database user name (required)")
+	backupCmd.Flags().StringVar(&backupOpts.DBHost, "db-host", "localhost", "Hostname of the database host")
+	backupCmd.Flags().StringVarP(&backupOpts.DBSource, "db-source", "s", "", "Source database name")
+	backupCmd.Flags().StringVarP(&backupOpts.ContainerID, "container-id", "c", "", "ID of container running PostgreSQL")
+	backupCmd.Flags().BoolVar(&backupOpts.ExportRoles, "export-roles", false, "Include roles in backup")
+	backupCmd.Flags().BoolVarP(&backupOpts.DaemonMode, "daemon", "d", false, "Run in daemon mode (no TTY required)")
 
 	_ = backupCmd.MarkFlagRequired("db-user")
 	_ = backupCmd.MarkFlagRequired("db-source")

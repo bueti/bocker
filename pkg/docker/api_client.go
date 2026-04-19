@@ -31,8 +31,7 @@ func NewClient() (*APIClient, error) {
 }
 
 // Authentication returns a base64 encoded string of the docker username and password
-func (c *APIClient) Authentication(app config.Application) (string, error) {
-
+func (c *APIClient) Authentication(app *config.Application) (string, error) {
 	authConfig := registry.AuthConfig{
 		Username: app.Config.Docker.Username,
 		Password: app.Config.Docker.Password,
