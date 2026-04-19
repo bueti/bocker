@@ -8,7 +8,7 @@ import (
 	"bocker.software-services.dev/pkg/db"
 	"bocker.software-services.dev/pkg/docker"
 	"bocker.software-services.dev/pkg/logger"
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/mattn/go-isatty"
 )
 

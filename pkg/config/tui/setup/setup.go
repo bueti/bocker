@@ -3,20 +3,20 @@ package tui
 import (
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/compat"
 )
 
 var (
-	focusedColor = lipgloss.AdaptiveColor{Light: "236", Dark: "248"}
-	blurredColor = lipgloss.AdaptiveColor{Light: "238", Dark: "246"}
+	focusedColor = compat.AdaptiveColor{Light: lipgloss.Color("236"), Dark: lipgloss.Color("248")}
+	blurredColor = compat.AdaptiveColor{Light: lipgloss.Color("238"), Dark: lipgloss.Color("246")}
 
 	focusedStyle = lipgloss.NewStyle().Foreground(focusedColor)
 	blurredStyle = lipgloss.NewStyle().Foreground(blurredColor)
-	cursorStyle  = focusedStyle.Copy()
 	noStyle      = lipgloss.NewStyle()
 
-	focusedButton = focusedStyle.Copy().Bold(true).Render("[ Save ]")
+	focusedButton = focusedStyle.Bold(true).Render("[ Save ]")
 	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Save"))
 )
 
@@ -25,18 +25,23 @@ func InitialModel() Model {
 		inputs: make([]textinput.Model, 2),
 	}
 
+	styles := textinput.DefaultStyles(compat.HasDarkBackground)
+	styles.Focused.Text = focusedStyle
+	styles.Focused.Prompt = focusedStyle
+	styles.Blurred.Text = noStyle
+	styles.Blurred.Prompt = noStyle
+
 	var t textinput.Model
 
 	for i := range m.inputs {
 		t = textinput.New()
-		t.Cursor.Style = cursorStyle
+		t.SetStyles(styles)
 		t.CharLimit = 255
 		t.Prompt = ""
 
 		switch i {
 		case 0:
 			t.Placeholder = "Username"
-			t.TextStyle = focusedStyle
 			t.Focus()
 		case 1:
 			t.Placeholder = "Password"

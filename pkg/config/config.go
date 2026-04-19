@@ -8,8 +8,8 @@ import (
 	"time"
 
 	tui "bocker.software-services.dev/pkg/config/tui/setup"
+	tea "charm.land/bubbletea/v2"
 	"github.com/adrg/xdg"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/zalando/go-keyring"
 	"gopkg.in/yaml.v3"
