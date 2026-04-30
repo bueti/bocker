@@ -8,7 +8,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/adrg/xdg v0.5.3
 	github.com/docker/docker v28.5.2+incompatible
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/spf13/cobra v1.10.2
 	github.com/zalando/go-keyring v0.2.8
 	gopkg.in/yaml.v3 v3.0.1
